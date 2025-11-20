@@ -1,0 +1,5 @@
+{
+  "name": "AppScope: AI-Powered App Competitor Analysis",
+  "description": "An AI-powered tool for mobile app analysis. Users can search for an app, view its details, and get AI insights based on reviews and market data to make smarter product and business decisions.",
+  "requestFramePermissions": []
+}

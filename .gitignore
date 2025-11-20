@@ -1,0 +1,10 @@
+node_modules/
+dist/
+electron/node_modules/
+electron/release/
+server/node_modules/
+.env
+server/.env
+*.log
+.DS_Store
+public/BetterApp.dmg

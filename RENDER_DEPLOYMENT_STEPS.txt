@@ -1,0 +1,62 @@
+RENDER DEPLOYMENT - STEP BY STEP
+==================================
+
+Based on your Render dashboard screenshot:
+
+STEP 1: Click "Deploy a Web Service"
+- You should see this card on your Overview page
+- Click on it
+
+STEP 2: Connect GitHub Repository
+- Render will ask you to connect a GitHub repo
+- If not connected, authorize Render to access GitHub
+- Select your repository (the one with your code)
+
+STEP 3: Configure Service
+- Name: betterapp-backend (or any name)
+- Region: Choose closest to you
+- Branch: main (or your default branch)
+- Root Directory: server ⚠️ IMPORTANT!
+- Runtime: Node
+- Build Command: npm install
+- Start Command: npm start
+- Instance Type: Free (select free tier)
+
+STEP 4: Add Environment Variables
+Click "Advanced" → "Add Environment Variable"
+
+Add these one by one:
+- API_KEY = your_gemini_api_key
+- SUPABASE_URL = https://aziknzyxfrbhfpiljetg.supabase.co
+- SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6aWtuenl4ZnJiaGZwaWxqZXRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMjUxMDksImV4cCI6MjA3ODgwMTEwOX0.rhTi6odfYjIF6hJaHxHUYnb_reMNFvIcEU4dkKG7AQ
+- STRIPE_SECRET_KEY = sk_test_YOUR_STRIPE_SECRET_KEY
+- STRIPE_PUBLISHABLE_KEY = pk_test_51SUUsc8RShVD231Itl0B36honK0sMrS8llqly93JTuQ8HypCaascQ0KbgKf0s51u0VRXVnCyvufsof5ek8S5IrYa009mh4Iklm
+- STRIPE_PRICE_ID = price_1SUUy08RShVD231IuTHiEAZv
+- STRIPE_WEBHOOK_SECRET = (leave empty for now, add after deployment)
+- EMAIL_HOST = smtp.resend.com
+- EMAIL_PORT = 587
+- EMAIL_USER = resend
+- EMAIL_PASSWORD = re_9hAoNXj3_CfLcsK7jmXHAESvwX9zicoNh
+- PORT = 10000
+
+STEP 5: Deploy
+- Click "Create Web Service"
+- Wait 5-10 minutes for first deployment
+- Watch the build logs
+
+STEP 6: Get Your URL
+- After deployment, Render gives you a URL like:
+  https://betterapp-backend.onrender.com
+- Copy this URL!
+
+STEP 7: Set Up Stripe Webhook
+- Go to Stripe Dashboard → Developers → Webhooks
+- Click "Add endpoint"
+- Endpoint URL: https://your-app-name.onrender.com/api/stripe/webhook
+- Select events: customer.subscription.created, updated, deleted
+- Copy the webhook secret (whsec_...)
+- Go back to Render → Environment → Add STRIPE_WEBHOOK_SECRET
+- Render will auto-redeploy
+
+DONE! Your backend is live! 🚀
+

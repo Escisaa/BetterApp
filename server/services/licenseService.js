@@ -1,0 +1,149 @@
+// License Service - Handles license validation and management
+import { createClient } from "@supabase/supabase-js";
+
+let supabase = null;
+
+function getSupabaseClient() {
+  if (!supabase) {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Missing Supabase configuration");
+    }
+
+    supabase = createClient(supabaseUrl, supabaseKey);
+  }
+  return supabase;
+}
+
+/**
+ * Validate a license key
+ * Returns: { valid: boolean, plan: string, expiresAt: Date, message: string }
+ */
+export async function validateLicense(licenseKey, deviceId = null) {
+  try {
+    const supabase = getSupabaseClient();
+    // Find license
+    const { data: license, error } = await supabase
+      .from("licenses")
+      .select("*, subscriptions(*)")
+      .eq("license_key", licenseKey)
+      .single();
+
+    if (error || !license) {
+      return {
+        valid: false,
+        message: "Invalid license key",
+      };
+    }
+
+    // Check if license is active
+    if (!license.is_active) {
+      return {
+        valid: false,
+        message: "License has been deactivated",
+      };
+    }
+
+    // Check if license has expired
+    const expiresAt = new Date(license.expires_at);
+    const now = new Date();
+
+    if (expiresAt < now) {
+      return {
+        valid: false,
+        message: "License has expired",
+      };
+    }
+
+    // Device binding: Check if license is already bound to a different device
+    if (license.device_id && license.device_id !== deviceId) {
+      return {
+        valid: false,
+        message: "License is already activated on another device",
+      };
+    }
+
+    // Update device ID if provided and not yet bound
+    if (deviceId && !license.device_id) {
+      await supabase
+        .from("licenses")
+        .update({ device_id: deviceId, updated_at: new Date().toISOString() })
+        .eq("id", license.id);
+    }
+
+    // Return license info
+    return {
+      valid: true,
+      plan: license.subscriptions?.plan || "monthly",
+      expiresAt: expiresAt,
+      subscriptionId: license.subscription_id,
+      message: "License is valid",
+    };
+  } catch (error) {
+    console.error("Error validating license:", error);
+    return {
+      valid: false,
+      message: "Error validating license",
+    };
+  }
+}
+
+/**
+ * Get license info (without validation)
+ */
+export async function getLicenseInfo(licenseKey) {
+  try {
+    const supabase = getSupabaseClient();
+    const { data: license, error } = await supabase
+      .from("licenses")
+      .select("*, subscriptions(*)")
+      .eq("license_key", licenseKey)
+      .single();
+
+    if (error || !license) {
+      return null;
+    }
+
+    return {
+      licenseKey: license.license_key,
+      plan: license.subscriptions?.plan,
+      status: license.subscriptions?.status,
+      expiresAt: license.expires_at,
+      isActive: license.is_active,
+      deviceId: license.device_id,
+    };
+  } catch (error) {
+    console.error("Error getting license info:", error);
+    return null;
+  }
+}
+
+/**
+ * Activate a license (mark as activated)
+ */
+export async function activateLicense(licenseKey, deviceId) {
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from("licenses")
+      .update({
+        device_id: deviceId,
+        activated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("license_key", licenseKey)
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, license: data };
+  } catch (error) {
+    console.error("Error activating license:", error);
+    return { success: false, error: error.message };
+  }
+}
