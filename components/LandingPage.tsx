@@ -125,15 +125,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                 Subscribe
               </motion.button>
               <motion.a
-                href={`${
-                  typeof window !== "undefined" &&
-                  window.location.hostname !== "localhost" &&
-                  !window.location.hostname.includes("127.0.0.1")
-                    ? "" // Production: use relative URL (same domain)
-                    : (
-                        import.meta.env.VITE_API_URL || "http://localhost:3002"
-                      ).replace(/[.\/]+$/, "")
-                }/BetterApp.dmg`}
+                href="https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp-1.0.0-arm64.dmg"
                 download="BetterApp.dmg"
                 className="bg-transparent text-white font-semibold px-6 py-3 rounded-lg border border-gray-700 hover:bg-gray-800 transition-colors shadow-sm inline-block"
                 whileHover={{ scale: 1.05, y: -2 }}
