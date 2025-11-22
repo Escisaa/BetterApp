@@ -63,7 +63,11 @@ const LandingPage: React.FC<LandingPageProps> = ({
             transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
             <Logo size={32} className="rounded-lg" />
-            <span className="font-semibold text-xl tracking-tight text-white">
+            <span
+              className={`font-semibold text-xl tracking-tight ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
               BetterApp
             </span>
           </motion.div>
