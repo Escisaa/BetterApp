@@ -126,7 +126,13 @@ const LandingPage: React.FC<LandingPageProps> = ({
               </motion.button>
               <motion.a
                 href={`${
-                  import.meta.env.VITE_API_URL || "http://localhost:3002"
+                  typeof window !== "undefined" &&
+                  window.location.hostname !== "localhost" &&
+                  !window.location.hostname.includes("127.0.0.1")
+                    ? "" // Production: use relative URL (same domain)
+                    : (
+                        import.meta.env.VITE_API_URL || "http://localhost:3002"
+                      ).replace(/[.\/]+$/, "")
                 }/BetterApp.dmg`}
                 download="BetterApp.dmg"
                 className="bg-transparent text-white font-semibold px-6 py-3 rounded-lg border border-gray-700 hover:bg-gray-800 transition-colors shadow-sm inline-block"
@@ -278,8 +284,16 @@ const LandingPage: React.FC<LandingPageProps> = ({
                 <button
                   onClick={async () => {
                     try {
+                      // Use relative URLs in production (same domain), otherwise use env var
                       const API_URL =
-                        import.meta.env.VITE_API_URL || "http://localhost:3002";
+                        typeof window !== "undefined" &&
+                        window.location.hostname !== "localhost" &&
+                        !window.location.hostname.includes("127.0.0.1")
+                          ? "" // Production: use relative URL (same domain)
+                          : (
+                              import.meta.env.VITE_API_URL ||
+                              "http://localhost:3002"
+                            ).replace(/[.\/]+$/, "");
                       const response = await fetch(
                         `${API_URL}/api/stripe/checkout`,
                         {
