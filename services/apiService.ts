@@ -1,8 +1,29 @@
 // New API service that uses the backend instead of direct API calls
 import { App } from "../types";
 
-const API_BASE_URL =
-  (import.meta.env?.VITE_API_URL as string) || "http://localhost:3002";
+// Use relative URLs when frontend and backend are on same domain (production)
+// Otherwise use environment variable or localhost for development
+const getApiBaseUrl = (): string => {
+  // Check if we're in browser and on production domain
+  if (
+    typeof window !== "undefined" &&
+    window.location.hostname !== "localhost" &&
+    !window.location.hostname.includes("127.0.0.1")
+  ) {
+    // Production: frontend and backend on same domain, use relative URLs
+    return ""; // Empty string = relative URLs (same domain)
+  }
+
+  // Development: use env var or localhost
+  const envUrl = import.meta.env?.VITE_API_URL as string;
+  if (envUrl) {
+    // Remove trailing slash and dots
+    return envUrl.replace(/[.\/]+$/, "");
+  }
+  return "http://localhost:3002";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface AppIconData {
   name: string;

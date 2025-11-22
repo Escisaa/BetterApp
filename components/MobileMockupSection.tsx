@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { fetchAppIcon } from "../services/apiService";
+import { getInstantIcon, setCachedIcon } from "../services/appIconCache";
 
 // App names to search for - these will be fetched from the App Store
 const appNamesRow1 = [
@@ -39,78 +40,125 @@ interface AppIcon {
 }
 
 const MobileMockupSection: React.FC = () => {
-  const [appsRow1, setAppsRow1] = useState<AppIcon[]>([]);
-  const [appsRow2, setAppsRow2] = useState<AppIcon[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Initialize with cached icons immediately (no empty arrays!)
+  const [appsRow1, setAppsRow1] = useState<AppIcon[]>(() => {
+    const apps = appNamesRow1.map((name) => {
+      const icon = getInstantIcon(name);
+      return { name, icon };
+    });
+    // Debug: log how many icons we have
+    const iconCount = apps.filter((a) => a.icon && a.icon.trim() !== "").length;
+    console.log(
+      `[MobileMockup] Row 1 initialized: ${iconCount}/${apps.length} icons available`
+    );
+    return apps;
+  });
+  const [appsRow2, setAppsRow2] = useState<AppIcon[]>(() => {
+    const apps = appNamesRow2.map((name) => {
+      const icon = getInstantIcon(name);
+      return { name, icon };
+    });
+    const iconCount = apps.filter((a) => a.icon && a.icon.trim() !== "").length;
+    console.log(
+      `[MobileMockup] Row 2 initialized: ${iconCount}/${apps.length} icons available`
+    );
+    return apps;
+  });
+  const [isLoading, setIsLoading] = useState(false); // Start as false since we have cached icons
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
 
   useEffect(() => {
     const fetchAppIcons = async () => {
-      setIsLoading(true);
+      // Icons are already initialized in useState, so we just update them in background
 
-      // Fetch all apps in parallel - no delays, maximum speed
-      const allAppNames = [...appNamesRow1, ...appNamesRow2];
-      const allPromises = allAppNames.map(async (appName) => {
-        try {
-          const appData = await fetchAppIcon(appName);
-          return {
-            name: appData.name,
-            icon: appData.icon,
-          };
-        } catch (error) {
-          console.error(`Failed to fetch icon for ${appName}:`, error);
-          return {
-            name: appName,
-            icon: "",
-          };
-        }
-      });
+      // STEP 2: Fetch real icons in background and update progressively
+      const BATCH_SIZE = 3; // Smaller batches for background updates
 
-      // Wait for all requests to complete in parallel
-      const allApps = await Promise.all(allPromises);
-
-      // Split back into rows
-      const row1Apps = allApps.slice(0, appNamesRow1.length);
-      const row2Apps = allApps.slice(appNamesRow1.length);
-
-      // Preload images row by row to fix Safari slow loading
-      // Set row 1 immediately after its images load
-      const row1Icons = row1Apps
-        .map((app) => app.icon)
-        .filter((icon) => icon && icon.length > 0);
-      const row1ImagePromises = row1Icons.map((iconUrl) => {
-        return new Promise<void>((resolve) => {
-          const img = new Image();
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-          img.src = iconUrl;
-          setTimeout(() => resolve(), 1500); // Shorter timeout for row 1
+      // Update row 1 in background
+      for (let i = 0; i < appNamesRow1.length; i += BATCH_SIZE) {
+        const batch = appNamesRow1.slice(i, i + BATCH_SIZE);
+        const batchPromises = batch.map(async (appName) => {
+          try {
+            const appData = await fetchAppIcon(appName);
+            if (appData.icon) {
+              // Cache the icon for next time
+              setCachedIcon(appName, appData.icon);
+            }
+            return {
+              name: appData.name,
+              icon: appData.icon,
+            };
+          } catch (error) {
+            return {
+              name: appName,
+              icon: getInstantIcon(appName), // Keep cached version on error
+            };
+          }
         });
-      });
 
-      // Show row 1 as soon as its images load
-      await Promise.all(row1ImagePromises);
-      setAppsRow1(row1Apps);
+        const batchResults = await Promise.all(batchPromises);
 
-      // Preload row 2 images in parallel
-      const row2Icons = row2Apps
-        .map((app) => app.icon)
-        .filter((icon) => icon && icon.length > 0);
-      const row2ImagePromises = row2Icons.map((iconUrl) => {
-        return new Promise<void>((resolve) => {
-          const img = new Image();
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-          img.src = iconUrl;
-          setTimeout(() => resolve(), 1500);
+        // Update only if icon changed (progressive enhancement)
+        setAppsRow1((prev) => {
+          const updated = [...prev];
+          batchResults.forEach((result, idx) => {
+            const actualIdx = i + idx;
+            if (
+              actualIdx < updated.length &&
+              result.icon &&
+              result.icon !== updated[actualIdx].icon
+            ) {
+              updated[actualIdx] = result;
+            }
+          });
+          return updated;
         });
-      });
 
-      // Show row 2 after its images load
-      await Promise.all(row2ImagePromises);
-      setAppsRow2(row2Apps);
-      setIsLoading(false);
+        // Small delay between batches
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+
+      // Update row 2 in background
+      for (let i = 0; i < appNamesRow2.length; i += BATCH_SIZE) {
+        const batch = appNamesRow2.slice(i, i + BATCH_SIZE);
+        const batchPromises = batch.map(async (appName) => {
+          try {
+            const appData = await fetchAppIcon(appName);
+            if (appData.icon) {
+              setCachedIcon(appName, appData.icon);
+            }
+            return {
+              name: appData.name,
+              icon: appData.icon,
+            };
+          } catch (error) {
+            return {
+              name: appName,
+              icon: getInstantIcon(appName),
+            };
+          }
+        });
+
+        const batchResults = await Promise.all(batchPromises);
+
+        setAppsRow2((prev) => {
+          const updated = [...prev];
+          batchResults.forEach((result, idx) => {
+            const actualIdx = i + idx;
+            if (
+              actualIdx < updated.length &&
+              result.icon &&
+              result.icon !== updated[actualIdx].icon
+            ) {
+              updated[actualIdx] = result;
+            }
+          });
+          return updated;
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
     };
 
     fetchAppIcons();
@@ -127,12 +175,12 @@ const MobileMockupSection: React.FC = () => {
         key={uniqueKey}
         className="flex-shrink-0 h-16 w-16 min-w-[64px] bg-gray-900/50 rounded-2xl border border-gray-800 p-1.5 flex items-center justify-center hover:border-gray-700 transition-colors"
       >
-        {app.icon ? (
+        {app.icon && app.icon.trim() !== "" ? (
           <img
             src={app.icon}
             alt={app.name}
             className="w-full h-full object-cover rounded-xl"
-            loading="eager"
+            loading={idx < 4 ? "eager" : "lazy"}
             decoding="async"
             onError={(e) => {
               // Fallback if image fails to load
@@ -192,21 +240,22 @@ const MobileMockupSection: React.FC = () => {
               display: "flex",
               width: "max-content",
               willChange: "transform",
+              minWidth: "200%", // Ensure enough width for smooth scrolling
             }}
           >
-            {isLoading
-              ? // Show loading placeholders
-                [...Array(12)].map((_, idx) => (
-                  <div
-                    key={`loading-1-${idx}`}
-                    className="flex-shrink-0 h-16 w-16 bg-gray-900/50 rounded-2xl border border-gray-800 p-1.5 flex items-center justify-center"
-                  >
-                    <div className="w-full h-full bg-gray-800 rounded-xl animate-pulse"></div>
-                  </div>
-                ))
-              : [...appsRow1, ...appsRow1, ...appsRow1, ...appsRow1].map(
+            {appsRow1.length > 0
+              ? [...appsRow1, ...appsRow1, ...appsRow1, ...appsRow1].map(
                   (app, idx) =>
                     renderAppIcon(app, idx % appsRow1.length, 1, `row1-${idx}`)
+                )
+              : // Fallback if empty
+                [...Array(12)].map((_, idx) =>
+                  renderAppIcon(
+                    { name: `App ${idx + 1}`, icon: "" },
+                    idx,
+                    1,
+                    `row1-fallback-${idx}`
+                  )
                 )}
           </div>
         </div>
@@ -223,21 +272,22 @@ const MobileMockupSection: React.FC = () => {
               display: "flex",
               width: "max-content",
               willChange: "transform",
+              minWidth: "200%", // Ensure enough width for smooth scrolling
             }}
           >
-            {isLoading
-              ? // Show loading placeholders
-                [...Array(12)].map((_, idx) => (
-                  <div
-                    key={`loading-2-${idx}`}
-                    className="flex-shrink-0 h-16 w-16 bg-gray-900/50 rounded-2xl border border-gray-800 p-1.5 flex items-center justify-center"
-                  >
-                    <div className="w-full h-full bg-gray-800 rounded-xl animate-pulse"></div>
-                  </div>
-                ))
-              : [...appsRow2, ...appsRow2, ...appsRow2, ...appsRow2].map(
+            {appsRow2.length > 0
+              ? [...appsRow2, ...appsRow2, ...appsRow2, ...appsRow2].map(
                   (app, idx) =>
                     renderAppIcon(app, idx % appsRow2.length, 2, `row2-${idx}`)
+                )
+              : // Fallback if empty
+                [...Array(12)].map((_, idx) =>
+                  renderAppIcon(
+                    { name: `App ${idx + 1}`, icon: "" },
+                    idx,
+                    2,
+                    `row2-fallback-${idx}`
+                  )
                 )}
           </div>
         </div>
