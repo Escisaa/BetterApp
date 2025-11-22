@@ -14,6 +14,7 @@ import {
 } from "./services/licenseService.js";
 import { handleStripeWebhook } from "./services/stripeService.js";
 import { createCheckoutSession } from "./services/stripeCheckout.js";
+import { sendDownloadLink } from "./services/emailService.js";
 
 dotenv.config();
 

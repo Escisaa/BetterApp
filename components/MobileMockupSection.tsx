@@ -39,7 +39,13 @@ interface AppIcon {
   icon: string;
 }
 
-const MobileMockupSection: React.FC = () => {
+interface MobileMockupSectionProps {
+  isDark?: boolean;
+}
+
+const MobileMockupSection: React.FC<MobileMockupSectionProps> = ({
+  isDark,
+}) => {
   // Initialize with cached icons immediately (no empty arrays!)
   const [appsRow1, setAppsRow1] = useState<AppIcon[]>(() => {
     const apps = appNamesRow1.map((name) => {
@@ -205,15 +211,19 @@ const MobileMockupSection: React.FC = () => {
     );
   };
 
-  // Check if dark mode is active
-  const isDark =
-    document.documentElement.classList.contains("dark") ||
-    !document.documentElement.classList.contains("light");
+  // Use prop or detect from document
+  const darkMode =
+    isDark !== undefined
+      ? isDark
+      : document.documentElement.classList.contains("dark") ||
+        !document.documentElement.classList.contains("light");
 
   return (
     <motion.section
       ref={ref}
-      className={`py-20 sm:py-28 px-4 ${isDark ? "bg-[#111213]" : "bg-white"}`}
+      className={`py-20 sm:py-28 px-4 ${
+        darkMode ? "bg-[#111213]" : "bg-white"
+      }`}
       initial={{ opacity: 0 }}
       animate={isInView ? { opacity: 1 } : { opacity: 0 }}
       transition={{ duration: 0.6 }}
@@ -226,14 +236,14 @@ const MobileMockupSection: React.FC = () => {
       >
         <h2
           className={`text-xl sm:text-2xl font-semibold tracking-tight ${
-            isDark ? "text-white" : "text-gray-900"
+            darkMode ? "text-white" : "text-gray-900"
           }`}
         >
           Trusted by developers analyzing millions of apps
         </h2>
         <p
           className={`max-w-2xl mx-auto mt-2 text-sm ${
-            isDark ? "text-gray-500" : "text-gray-600"
+            darkMode ? "text-gray-500" : "text-gray-600"
           }`}
         >
           From indie startups to Fortune 500 companies

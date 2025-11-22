@@ -1,14 +1,18 @@
 import React, { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
-const ChatDemo: React.FC = () => {
+interface ChatDemoProps {
+  isDark?: boolean;
+}
+
+const ChatDemo: React.FC<ChatDemoProps> = ({ isDark = true }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
 
   return (
     <motion.section
       ref={ref}
-      className="py-20 sm:py-28 px-4"
+      className={`py-20 sm:py-28 px-4 ${isDark ? "bg-[#111213]" : "bg-white"}`}
       initial={{ opacity: 0 }}
       animate={isInView ? { opacity: 1 } : { opacity: 0 }}
       transition={{ duration: 0.6 }}
@@ -20,7 +24,9 @@ const ChatDemo: React.FC = () => {
         transition={{ duration: 0.6, delay: 0.2 }}
       >
         <motion.div
-          className="inline-block bg-gray-800 text-gray-300 text-sm font-semibold px-4 py-1.5 rounded-full mb-6"
+          className={`inline-block text-sm font-semibold px-4 py-1.5 rounded-full mb-6 ${
+            isDark ? "bg-gray-800 text-gray-300" : "bg-gray-100 text-gray-700"
+          }`}
           initial={{ opacity: 0, scale: 0.8 }}
           animate={
             isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }
@@ -29,16 +35,28 @@ const ChatDemo: React.FC = () => {
         >
           ✨ New Feature
         </motion.div>
-        <h2 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tighter">
+        <h2
+          className={`text-4xl sm:text-5xl font-extrabold tracking-tighter ${
+            isDark ? "text-white" : "text-gray-900"
+          }`}
+        >
           Chat with any app <span className="text-orange-500">using AI</span>
         </h2>
-        <p className="max-w-2xl mx-auto mt-4 text-lg text-gray-400">
+        <p
+          className={`max-w-2xl mx-auto mt-4 text-lg ${
+            isDark ? "text-gray-400" : "text-gray-600"
+          }`}
+        >
           Ask questions about any app's features, user experience, or market
           positioning. Get instant insights powered by advanced AI analysis.
         </p>
       </motion.div>
       <motion.div
-        className="max-w-4xl mx-auto mt-12 bg-[#1C1C1E] border border-gray-800 rounded-2xl shadow-2xl p-8 sm:p-12"
+        className={`max-w-4xl mx-auto mt-12 rounded-2xl shadow-2xl p-8 sm:p-12 ${
+          isDark
+            ? "bg-[#1C1C1E] border border-gray-800"
+            : "bg-gray-50 border border-gray-200"
+        }`}
         initial={{ opacity: 0, y: 50 }}
         animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
         transition={{
@@ -49,7 +67,11 @@ const ChatDemo: React.FC = () => {
       >
         <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
           <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-white">
+            <h3
+              className={`text-2xl font-bold ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
               Natural conversation about apps
             </h3>
             <ul className="space-y-3">
@@ -73,20 +95,38 @@ const ChatDemo: React.FC = () => {
                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <span className="text-gray-300">{question}</span>
+                  <span className={isDark ? "text-gray-300" : "text-gray-700"}>
+                    {question}
+                  </span>
                 </li>
               ))}
             </ul>
           </div>
-          <div className="bg-black/20 p-4 rounded-xl space-y-4">
+          <div
+            className={`p-4 rounded-xl space-y-4 ${
+              isDark ? "bg-black/20" : "bg-gray-100"
+            }`}
+          >
             {/* User Message */}
             <div className="flex justify-end">
               <div className="relative max-w-xs">
                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center text-sm font-bold text-white border-2 border-[#1C1C1E]">
                   U
                 </div>
-                <div className="bg-gray-800 text-gray-200 px-4 py-3 rounded-xl rounded-tr-none">
-                  <p className="text-sm font-medium text-gray-400 mb-1">You</p>
+                <div
+                  className={`px-4 py-3 rounded-xl rounded-tr-none ${
+                    isDark
+                      ? "bg-gray-800 text-gray-200"
+                      : "bg-gray-200 text-gray-800"
+                  }`}
+                >
+                  <p
+                    className={`text-sm font-medium mb-1 ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
+                    You
+                  </p>
                   <p className="text-sm">
                     What are users saying about Notion's pricing?
                   </p>

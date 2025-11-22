@@ -65,7 +65,11 @@ const mockApps = [
   },
 ];
 
-const InAction = () => {
+interface InActionProps {
+  isDark?: boolean;
+}
+
+const InAction: React.FC<InActionProps> = ({ isDark = true }) => {
   // Icons specific to this demonstration component
   const MessageBubbleIcon = ({ className }: { className?: string }) => (
     <svg

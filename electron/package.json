@@ -35,21 +35,25 @@
     ],
     "mac": {
       "category": "public.app-category.developer-tools",
-      "target": [
-        {
-          "target": "pkg",
-          "arch": [
-            "arm64"
-          ]
-        }
-      ],
+      "target": "dmg",
       "icon": "icon.png",
       "gatekeeperAssess": false,
       "hardenedRuntime": false,
       "identity": null
     },
-    "pkg": {
-      "scripts": "scripts"
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     },
     "win": {
       "target": "nsis"
