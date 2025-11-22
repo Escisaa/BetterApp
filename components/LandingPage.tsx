@@ -206,14 +206,17 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     // Show helpful instructions for macOS users
                     if (navigator.platform.toUpperCase().indexOf("MAC") >= 0) {
                       e.preventDefault();
-                      const instructions = `📥 Download Instructions for macOS:
+                      const instructions = `📥 Installation Instructions for macOS:
 
-1. Click "Download" below to get the app
-2. Open your Downloads folder
-3. Right-click the BetterApp.dmg file
-4. Select "Open" (don't double-click)
-5. Click "Open" in the security dialog
-6. Drag BetterApp to Applications
+After downloading, if you see a security warning:
+
+1. Open System Settings (⚙️ icon in Dock)
+2. Go to Privacy & Security
+3. Scroll down to Security section
+4. You'll see "BetterApp was blocked"
+5. Click "Open Anyway"
+6. Click "Open" in the confirmation dialog
+7. Drag BetterApp to Applications folder
 
 This is normal for indie apps - macOS just needs confirmation it's safe!`;
 

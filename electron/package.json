@@ -22,10 +22,35 @@
       "../dist/**/*",
       "../server/**/*"
     ],
+    "extraFiles": [
+      {
+        "from": "README.txt",
+        "to": "README.txt"
+      }
+    ],
     "mac": {
       "category": "public.app-category.developer-tools",
       "target": "dmg",
-      "icon": "icon.png"
+      "icon": "icon.png",
+      "gatekeeperAssess": false,
+      "hardenedRuntime": false,
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "background": null,
+      "window": {
+        "width": 540,
+        "height": 380
+      }
     },
     "win": {
       "target": "nsis"
