@@ -205,10 +205,15 @@ const MobileMockupSection: React.FC = () => {
     );
   };
 
+  // Check if dark mode is active
+  const isDark =
+    document.documentElement.classList.contains("dark") ||
+    !document.documentElement.classList.contains("light");
+
   return (
     <motion.section
       ref={ref}
-      className="py-20 sm:py-28 px-4"
+      className={`py-20 sm:py-28 px-4 ${isDark ? "bg-[#111213]" : "bg-white"}`}
       initial={{ opacity: 0 }}
       animate={isInView ? { opacity: 1 } : { opacity: 0 }}
       transition={{ duration: 0.6 }}
@@ -219,11 +224,19 @@ const MobileMockupSection: React.FC = () => {
         animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
         transition={{ duration: 0.6, delay: 0.2 }}
       >
-        <h2 className="text-3xl font-bold text-white tracking-tight">
-          Analyze top apps, from indie hits to industry leaders
+        <h2
+          className={`text-xl sm:text-2xl font-semibold tracking-tight ${
+            isDark ? "text-white" : "text-gray-900"
+          }`}
+        >
+          Trusted by developers analyzing millions of apps
         </h2>
-        <p className="max-w-2xl mx-auto mt-3 text-base text-gray-500">
-          We provide insights for millions of apps on the App Store.
+        <p
+          className={`max-w-2xl mx-auto mt-2 text-sm ${
+            isDark ? "text-gray-500" : "text-gray-600"
+          }`}
+        >
+          From indie startups to Fortune 500 companies
         </p>
       </motion.div>
 

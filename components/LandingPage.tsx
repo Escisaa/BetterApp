@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Logo from "./Logo";
 import InAction from "./InAction";
@@ -14,6 +14,17 @@ interface LandingPageProps {
 const LandingPage: React.FC<LandingPageProps> = ({
   onGetStarted = () => {},
 }) => {
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    // Apply theme to document
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDark]);
+
   const fadeInUp = {
     initial: { opacity: 0, y: 30 },
     animate: { opacity: 1, y: 0 },
@@ -32,7 +43,9 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
   return (
     <motion.div
-      className="flex flex-col min-h-screen bg-[#111213] text-gray-100"
+      className={`flex flex-col min-h-screen ${
+        isDark ? "bg-[#111213] text-gray-100" : "bg-white text-gray-900"
+      }`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -54,10 +67,14 @@ const LandingPage: React.FC<LandingPageProps> = ({
               BetterApp
             </span>
           </motion.div>
-          <nav className="hidden sm:flex items-center space-x-8 text-sm font-medium text-gray-400">
+          <nav className="hidden sm:flex items-center space-x-6 text-sm font-medium">
             <motion.a
               href="#"
-              className="hover:text-white"
+              className={
+                isDark
+                  ? "text-gray-400 hover:text-white"
+                  : "text-gray-600 hover:text-gray-900"
+              }
               whileHover={{ y: -2 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
@@ -65,12 +82,57 @@ const LandingPage: React.FC<LandingPageProps> = ({
             </motion.a>
             <motion.a
               href="#pricing"
-              className="hover:text-white"
+              className={
+                isDark
+                  ? "text-gray-400 hover:text-white"
+                  : "text-gray-600 hover:text-gray-900"
+              }
               whileHover={{ y: -2 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
               Pricing
             </motion.a>
+            <motion.button
+              onClick={() => setIsDark(!isDark)}
+              className={`p-2 rounded-lg ${
+                isDark
+                  ? "text-gray-400 hover:text-white hover:bg-gray-800"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              } transition-colors`}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDark ? (
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                  />
+                </svg>
+              )}
+            </motion.button>
           </nav>
         </div>
       </motion.header>
@@ -84,7 +146,11 @@ const LandingPage: React.FC<LandingPageProps> = ({
             animate="animate"
           >
             <motion.div
-              className="inline-block bg-gray-800 text-gray-300 text-sm font-semibold px-4 py-1.5 rounded-full mb-6"
+              className={`inline-block ${
+                isDark
+                  ? "bg-gray-800 text-gray-300"
+                  : "bg-gray-100 text-gray-700"
+              } text-sm font-semibold px-4 py-1.5 rounded-full mb-6`}
               variants={fadeInUp}
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
@@ -92,7 +158,9 @@ const LandingPage: React.FC<LandingPageProps> = ({
               ✨ Made for indie iOS developers
             </motion.div>
             <motion.h1
-              className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-white tracking-tighter leading-tight"
+              className={`text-5xl sm:text-6xl md:text-7xl font-extrabold ${
+                isDark ? "text-white" : "text-gray-900"
+              } tracking-tighter leading-tight`}
               variants={fadeInUp}
             >
               Understand your competition.
@@ -100,7 +168,9 @@ const LandingPage: React.FC<LandingPageProps> = ({
               Build better apps.
             </motion.h1>
             <motion.p
-              className="max-w-2xl mx-auto mt-6 text-lg text-gray-400"
+              className={`max-w-2xl mx-auto mt-6 text-lg ${
+                isDark ? "text-gray-400" : "text-gray-600"
+              }`}
               variants={fadeInUp}
             >
               Chat with any app using AI, analyze competitor reviews, and
@@ -124,14 +194,15 @@ const LandingPage: React.FC<LandingPageProps> = ({
               >
                 Subscribe
               </motion.button>
-              <motion.a
-                href="https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp-1.0.0-arm64.dmg"
-                download="BetterApp.dmg"
-                onClick={(e) => {
-                  // Show helpful instructions for macOS users
-                  if (navigator.platform.toUpperCase().indexOf("MAC") >= 0) {
-                    e.preventDefault();
-                    const instructions = `📥 Download Instructions for macOS:
+              <div className="flex flex-col items-center">
+                <motion.a
+                  href="https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp-1.0.0-arm64.dmg"
+                  download="BetterApp.dmg"
+                  onClick={(e) => {
+                    // Show helpful instructions for macOS users
+                    if (navigator.platform.toUpperCase().indexOf("MAC") >= 0) {
+                      e.preventDefault();
+                      const instructions = `📥 Download Instructions for macOS:
 
 1. Click "Download" below to get the app
 2. Open your Downloads folder
@@ -142,28 +213,40 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
 This is normal for indie apps - macOS just needs confirmation it's safe!`;
 
-                    if (
-                      window.confirm(
-                        instructions +
-                          "\n\nClick OK to download, or Cancel to read this again."
-                      )
-                    ) {
-                      window.location.href =
-                        "https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp-1.0.0-arm64.dmg";
+                      if (
+                        window.confirm(
+                          instructions +
+                            "\n\nClick OK to download, or Cancel to read this again."
+                        )
+                      ) {
+                        window.location.href =
+                          "https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp-1.0.0-arm64.dmg";
+                      }
                     }
-                  }
-                }}
-                className="bg-transparent text-white font-semibold px-6 py-3 rounded-lg border border-gray-700 hover:bg-gray-800 transition-colors shadow-sm inline-block relative group"
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                title="macOS users: Right-click → Open after download"
-              >
-                Install Desktop App
-                <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  macOS
-                </span>
-              </motion.a>
+                  }}
+                  className={`bg-transparent font-semibold px-6 py-3 rounded-lg border ${
+                    isDark
+                      ? "text-white border-gray-700 hover:bg-gray-800"
+                      : "text-gray-900 border-gray-300 hover:bg-gray-50"
+                  } transition-colors shadow-sm inline-block relative group`}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  title="macOS users: Right-click → Open after download"
+                >
+                  Install Desktop App
+                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    macOS
+                  </span>
+                </motion.a>
+                <p
+                  className={`text-xs mt-2 ${
+                    isDark ? "text-gray-500" : "text-gray-400"
+                  }`}
+                >
+                  Available for macOS 13 and up
+                </p>
+              </div>
             </motion.div>
           </motion.div>
         </div>
