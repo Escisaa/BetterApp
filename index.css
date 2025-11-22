@@ -27,11 +27,21 @@ body {
 }
 
 .scroll-left {
-  animation: scroll-left 120s linear infinite;
+  animation: scroll-left 60s linear infinite;
+  animation-play-state: running;
 }
 
 .scroll-right {
-  animation: scroll-right 120s linear infinite;
+  animation: scroll-right 60s linear infinite;
+  animation-play-state: running;
+}
+
+/* Ensure scrolling works even with reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  .scroll-left,
+  .scroll-right {
+    animation-play-state: running;
+  }
 }
 
 @keyframes rotate-wheel {

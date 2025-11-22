@@ -202,35 +202,6 @@ const LandingPage: React.FC<LandingPageProps> = ({
                 <motion.a
                   href="https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp-1.0.0-arm64.dmg"
                   download="BetterApp.dmg"
-                  onClick={(e) => {
-                    // Show helpful instructions for macOS users
-                    if (navigator.platform.toUpperCase().indexOf("MAC") >= 0) {
-                      e.preventDefault();
-                      const instructions = `📥 Installation Instructions for macOS:
-
-After downloading, if you see a security warning:
-
-1. Open System Settings (⚙️ icon in Dock)
-2. Go to Privacy & Security
-3. Scroll down to Security section
-4. You'll see "BetterApp was blocked"
-5. Click "Open Anyway"
-6. Click "Open" in the confirmation dialog
-7. Drag BetterApp to Applications folder
-
-This is normal for indie apps - macOS just needs confirmation it's safe!`;
-
-                      if (
-                        window.confirm(
-                          instructions +
-                            "\n\nClick OK to download, or Cancel to read this again."
-                        )
-                      ) {
-                        window.location.href =
-                          "https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp-1.0.0-arm64.dmg";
-                      }
-                    }
-                  }}
                   className={`bg-transparent font-semibold px-6 py-3 rounded-lg border ${
                     isDark
                       ? "text-white border-gray-700 hover:bg-gray-800"

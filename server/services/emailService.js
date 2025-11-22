@@ -5,15 +5,15 @@ let transporter = null;
 
 function getEmailTransporter() {
   if (!transporter) {
-    // Use environment variables or default to Gmail SMTP
-    const emailHost = process.env.EMAIL_HOST || "smtp.gmail.com";
+    // Resend configuration
+    const emailHost = process.env.EMAIL_HOST || "smtp.resend.com";
     const emailPort = parseInt(process.env.EMAIL_PORT || "587");
-    const emailUser = process.env.EMAIL_USER;
-    const emailPassword = process.env.EMAIL_PASSWORD;
+    const emailUser = process.env.EMAIL_USER || "resend";
+    const emailPassword = process.env.EMAIL_PASSWORD; // Resend API key
 
-    if (!emailUser || !emailPassword) {
+    if (!emailPassword) {
       console.warn(
-        "Email not configured. Set EMAIL_USER and EMAIL_PASSWORD in .env"
+        "Email not configured. Set EMAIL_PASSWORD (Resend API key) in .env"
       );
       return null;
     }
@@ -21,10 +21,10 @@ function getEmailTransporter() {
     transporter = nodemailer.createTransport({
       host: emailHost,
       port: emailPort,
-      secure: emailPort === 465, // true for 465, false for other ports
+      secure: false, // Resend uses port 587 with STARTTLS
       auth: {
         user: emailUser,
-        pass: emailPassword,
+        pass: emailPassword, // This is the Resend API key
       },
     });
   }
