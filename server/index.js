@@ -2,6 +2,11 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import axios from "axios";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import {
   validateLicense,
   getLicenseInfo,
@@ -19,8 +24,38 @@ const PORT = process.env.PORT || 3002;
 app.use(cors());
 app.use(express.json());
 
-// Serve static files (desktop app downloads)
-app.use(express.static("public"));
+// Serve static files (desktop app downloads and React app)
+const publicPath = path.join(__dirname, "public");
+app.use(
+  express.static(publicPath, {
+    // Don't set index to false, but handle it in the catch-all
+    index: false,
+  })
+);
+
+// Serve React app for all non-API routes (SPA routing)
+app.get("*", (req, res, next) => {
+  // Skip API routes
+  if (req.path.startsWith("/api/")) {
+    return next();
+  }
+  // Skip static files with extensions (let express.static handle them)
+  // This allows .dmg, .png, .js, .css, etc. to be served
+  if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
+    return next(); // Let express.static handle it (or 404 if not found)
+  }
+  // Serve index.html for all other routes (React Router)
+  res.sendFile(path.join(publicPath, "index.html"), (err) => {
+    if (err) {
+      // If index.html doesn't exist, it means React app isn't built yet
+      // This is fine for development
+      res.status(404).json({
+        error:
+          "Frontend not built. Run 'npm run build' and copy dist/ to server/public/",
+      });
+    }
+  });
+});
 
 // Environment variables
 const SERPAPI_API_KEY = process.env.SERPAPI_API_KEY;
@@ -215,7 +250,7 @@ app.get("/api/icon", async (req, res) => {
       const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(
         appName
       )}&entity=software&country=US&limit=1`;
-      const itunesResponse = await axios.get(itunesUrl, { timeout: 10000 });
+      const itunesResponse = await axios.get(itunesUrl, { timeout: 3000 });
 
       if (
         itunesResponse.data.results &&
@@ -252,7 +287,7 @@ app.get("/api/icon", async (req, res) => {
         const serpResponse = await axios.get(
           `${serpUrl}?${params.toString()}`,
           {
-            timeout: 10000,
+            timeout: 3000,
           }
         );
 
