@@ -127,12 +127,42 @@ const LandingPage: React.FC<LandingPageProps> = ({
               <motion.a
                 href="https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp-1.0.0-arm64.dmg"
                 download="BetterApp.dmg"
-                className="bg-transparent text-white font-semibold px-6 py-3 rounded-lg border border-gray-700 hover:bg-gray-800 transition-colors shadow-sm inline-block"
+                onClick={(e) => {
+                  // Show helpful instructions for macOS users
+                  if (navigator.platform.toUpperCase().indexOf("MAC") >= 0) {
+                    e.preventDefault();
+                    const instructions = `📥 Download Instructions for macOS:
+
+1. Click "Download" below to get the app
+2. Open your Downloads folder
+3. Right-click the BetterApp.dmg file
+4. Select "Open" (don't double-click)
+5. Click "Open" in the security dialog
+6. Drag BetterApp to Applications
+
+This is normal for indie apps - macOS just needs confirmation it's safe!`;
+
+                    if (
+                      window.confirm(
+                        instructions +
+                          "\n\nClick OK to download, or Cancel to read this again."
+                      )
+                    ) {
+                      window.location.href =
+                        "https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp-1.0.0-arm64.dmg";
+                    }
+                  }
+                }}
+                className="bg-transparent text-white font-semibold px-6 py-3 rounded-lg border border-gray-700 hover:bg-gray-800 transition-colors shadow-sm inline-block relative group"
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                title="macOS users: Right-click → Open after download"
               >
                 Install Desktop App
+                <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  macOS
+                </span>
               </motion.a>
             </motion.div>
           </motion.div>
