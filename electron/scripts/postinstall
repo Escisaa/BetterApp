@@ -1,0 +1,20 @@
+#!/bin/bash
+# Post-install script for BetterApp .pkg installer
+# This automatically removes quarantine so users don't see warnings
+
+APP_PATH="/Applications/BetterApp.app"
+
+if [ -d "$APP_PATH" ]; then
+    # Remove quarantine attribute
+    xattr -cr "$APP_PATH" 2>/dev/null
+    
+    # Ad-hoc sign to reduce warnings
+    codesign --force --deep --sign - "$APP_PATH" 2>/dev/null
+    
+    echo "BetterApp installed successfully!"
+else
+    echo "Warning: BetterApp.app not found at $APP_PATH"
+fi
+
+exit 0
+

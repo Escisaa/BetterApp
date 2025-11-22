@@ -35,11 +35,21 @@
     ],
     "mac": {
       "category": "public.app-category.developer-tools",
-      "target": "dmg",
+      "target": [
+        {
+          "target": "pkg",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
       "icon": "icon.png",
       "gatekeeperAssess": false,
       "hardenedRuntime": false,
       "identity": null
+    },
+    "pkg": {
+      "scripts": "scripts"
     },
     "dmg": {
       "contents": [

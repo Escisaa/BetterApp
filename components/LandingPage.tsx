@@ -200,8 +200,8 @@ const LandingPage: React.FC<LandingPageProps> = ({
               </motion.button>
               <div className="flex flex-col items-center">
                 <motion.a
-                  href="https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp-1.0.0-arm64.dmg"
-                  download="BetterApp.dmg"
+                  href="https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp-1.0.0-arm64.pkg"
+                  download="BetterApp.pkg"
                   className={`bg-transparent font-semibold px-6 py-3 rounded-lg border ${
                     isDark
                       ? "text-white border-gray-700 hover:bg-gray-800"
@@ -210,7 +210,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  title="macOS users: Right-click → Open after download"
+                  title="Download and install BetterApp for macOS"
                 >
                   Install Desktop App
                   <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
