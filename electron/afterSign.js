@@ -4,13 +4,12 @@
 const { execSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
-const glob = require("glob");
 
 exports.default = async function (context) {
-  const { artifactPaths, packager } = context;
+  const { artifactPaths } = context;
 
   // Find the DMG file
-  const dmgPath = artifactPaths.find((p) => p.endsWith(".dmg"));
+  const dmgPath = artifactPaths?.find((p) => p.endsWith(".dmg"));
 
   if (dmgPath && fs.existsSync(dmgPath)) {
     console.log("🔐 Signing DMG to reduce Gatekeeper warnings...");
