@@ -908,24 +908,20 @@ const Dashboard: React.FC = () => {
     success: boolean;
     message?: string;
   } | null>(null);
-  const [showFeatureRequestsModal, setShowFeatureRequestsModal] =
-    useState(false);
   const [selectedTrackedApp, setSelectedTrackedApp] =
     useState<TrackedApp | null>(null);
 
-  // Check license on mount and show modal if no license
+  // Check license on mount but don't show modal immediately (let user explore first)
   useEffect(() => {
     const checkLicense = async () => {
       const valid = await checkLicenseStatus();
       setHasLicense(valid);
-      // Show license modal if no valid license
-      if (!valid) {
-        setShowLicenseModal(true);
-      } else {
+      if (valid) {
         // Load license details if valid
         const details = await getLicenseDetails();
         setLicenseDetails(details);
       }
+      // Don't auto-show modal - let user click features to trigger it
     };
     checkLicense();
   }, []);
@@ -1095,9 +1091,11 @@ const Dashboard: React.FC = () => {
           return appsWithAngles;
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error searching apps:", error);
-      alert("Failed to search for apps. Please try again.");
+      const errorMessage =
+        error?.message || "Failed to search for apps. Please try again.";
+      alert(errorMessage);
       if (view === "analysis") {
         handleSearchView(); // Go back to search if it fails
       }
@@ -1396,11 +1394,6 @@ ${analysisResult.marketOpportunities}
           </svg>
         ),
       },
-      {
-        id: "requests",
-        label: "Feature Requests",
-        icon: <GiftIcon className="w-5 h-5 text-orange-500" />,
-      },
     ];
 
     return (
@@ -1409,7 +1402,7 @@ ${analysisResult.marketOpportunities}
           <div className="flex items-center space-x-3">
             <Logo size={32} className="rounded-lg" />
             <span className="font-semibold text-xl tracking-tight text-white">
-              AppScope
+              BetterApp
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -1420,11 +1413,9 @@ ${analysisResult.marketOpportunities}
                   if (tab.id === "license") {
                     setShowLicenseModal(true);
                     setShowTrackedModal(false);
-                    setShowFeatureRequestsModal(false);
                   } else if (tab.id === "tracked") {
                     setShowTrackedModal(true);
                     setShowLicenseModal(false);
-                    setShowFeatureRequestsModal(false);
                   } else if (tab.id === "keywords") {
                     if (!hasLicense) {
                       setShowLicenseModal(true);
@@ -1432,17 +1423,11 @@ ${analysisResult.marketOpportunities}
                       setView("keywords");
                     }
                     setShowTrackedModal(false);
-                    setShowFeatureRequestsModal(false);
-                  } else if (tab.id === "requests") {
-                    setShowFeatureRequestsModal(true);
-                    setShowTrackedModal(false);
-                    setShowLicenseModal(false);
                   }
                 }}
                 className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full font-medium transition-all duration-200 text-base ${
                   (tab.id === "license" && showLicenseModal) ||
                   (tab.id === "tracked" && showTrackedModal) ||
-                  (tab.id === "requests" && showFeatureRequestsModal) ||
                   (tab.id === "keywords" && (view as string) === "keywords")
                     ? "bg-gray-200 text-gray-900"
                     : "text-gray-400 hover:bg-gray-800 hover:text-white"
@@ -1981,215 +1966,112 @@ ${analysisResult.marketOpportunities}
           </div>
         )}
 
-        {/* Feature Requests Modal */}
-        {showFeatureRequestsModal && (
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setShowFeatureRequestsModal(false);
-              }
-            }}
-          >
-            <div
-              className="bg-[#1C1C1E] border border-gray-800 rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)",
-              }}
-            >
-              {/* Header */}
-              <div className="flex justify-between items-center p-6 border-b border-gray-800 flex-shrink-0">
-                <h2 className="text-2xl font-bold text-white">
-                  Feature Requests
-                </h2>
-                <div className="flex items-center gap-4">
-                  <button className="text-sm text-gray-400 hover:text-white px-3 py-1.5 rounded-lg border border-gray-700 flex items-center gap-2">
-                    <span>All (0)</span>
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0-12l-4 4m4-4l4 4"
-                      />
-                    </svg>
-                  </button>
-                  <button className="text-sm text-gray-400 hover:text-white">
-                    Refresh
-                  </button>
-                  <button
-                    onClick={() => setShowFeatureRequestsModal(false)}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto p-6">
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">💡</div>
-                  <h3 className="text-xl font-semibold text-white mb-2">
-                    No Feature Requests Yet
-                  </h3>
-                  <p className="text-gray-400 mb-4">
-                    Feature requests will appear here once users submit them
-                  </p>
-                </div>
-              </div>
-
-              {/* Floating Add Button */}
-              <div className="absolute bottom-6 right-6">
-                <button className="w-14 h-14 bg-orange-600 text-white rounded-full shadow-lg hover:bg-orange-700 transition-colors flex items-center justify-center">
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {!showTrackedModal &&
-          !showFeatureRequestsModal &&
-          !showLicenseModal &&
-          view === "search" && (
-            <div className="flex-grow flex flex-col items-center justify-center">
-              <main className="relative w-full h-96 my-12 flex items-center justify-center">
-                {isLoadingBubbles ? (
-                  <div className="flex items-center justify-center">
-                    <div className="text-center text-gray-400 space-y-2">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
-                      <p>Loading apps...</p>
-                    </div>
+        {!showTrackedModal && !showLicenseModal && view === "search" && (
+          <div className="flex-grow flex flex-col items-center justify-center">
+            <main className="relative w-full h-96 my-12 flex items-center justify-center">
+              {isLoadingBubbles ? (
+                <div className="flex items-center justify-center">
+                  <div className="text-center text-gray-400 space-y-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+                    <p>Loading apps...</p>
                   </div>
-                ) : (
-                  <div
-                    className="w-96 h-96 relative"
-                    style={{ animation: "rotate-wheel 60s linear infinite" }}
-                  >
-                    {bubbleApps.map((app, index) => {
-                      const radius = 140;
-                      const radians = (app.angle * Math.PI) / 180;
-                      const x = Math.cos(radians) * radius;
-                      const y = Math.sin(radians) * radius;
-                      const floatClass = `float-${(index % 7) + 1}`;
+                </div>
+              ) : (
+                <div
+                  className="w-96 h-96 relative"
+                  style={{ animation: "rotate-wheel 60s linear infinite" }}
+                >
+                  {bubbleApps.map((app, index) => {
+                    const radius = 140;
+                    const radians = (app.angle * Math.PI) / 180;
+                    const x = Math.cos(radians) * radius;
+                    const y = Math.sin(radians) * radius;
+                    const floatClass = `float-${(index % 7) + 1}`;
 
-                      return (
-                        <div // Positioning wrapper
-                          key={`${app.id}-${index}`}
-                          className="absolute top-1/2 left-1/2"
-                          style={{ transform: `translate(${x}px, ${y}px)` }}
+                    return (
+                      <div // Positioning wrapper
+                        key={`${app.id}-${index}`}
+                        className="absolute top-1/2 left-1/2"
+                        style={{ transform: `translate(${x}px, ${y}px)` }}
+                      >
+                        <div // Centering wrapper
+                          className="w-20 h-20 -translate-x-1/2 -translate-y-1/2"
                         >
-                          <div // Centering wrapper
-                            className="w-20 h-20 -translate-x-1/2 -translate-y-1/2"
+                          <div // Animation wrapper + Click Handler
+                            className={`w-full h-full group cursor-pointer ${floatClass}`}
+                            onClick={() => handleSearch(app.searchTerm)}
                           >
-                            <div // Animation wrapper + Click Handler
-                              className={`w-full h-full group cursor-pointer ${floatClass}`}
-                              onClick={() => handleSearch(app.searchTerm)}
+                            <div
+                              className={`w-full h-full rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300 border border-gray-800 overflow-hidden ${
+                                app.icon ? "" : app.bg || "bg-gray-800"
+                              }`}
                             >
-                              <div
-                                className={`w-full h-full rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300 border border-gray-800 overflow-hidden ${
-                                  app.icon ? "" : app.bg || "bg-gray-800"
-                                }`}
-                              >
-                                {app.icon ? (
-                                  <img
-                                    src={app.icon}
-                                    alt={`${app.displayName} logo`}
-                                    className="w-full h-full rounded-full object-cover"
-                                    loading="eager"
-                                    onError={(e) => {
-                                      // Fallback to colored background with initial letter
-                                      const img = e.target as HTMLImageElement;
-                                      img.style.display = "none";
-                                      const parent = img.parentElement;
-                                      if (
-                                        parent &&
-                                        !parent.querySelector(
-                                          ".fallback-initial"
-                                        )
-                                      ) {
-                                        const fallback =
-                                          document.createElement("div");
-                                        fallback.className = `w-full h-full rounded-full flex items-center justify-center text-white font-bold text-xl fallback-initial ${
-                                          app.bg || "bg-gray-800"
-                                        }`;
-                                        fallback.textContent = app.displayName
-                                          .charAt(0)
-                                          .toUpperCase();
-                                        parent.appendChild(fallback);
-                                      }
-                                    }}
-                                  />
-                                ) : (
-                                  <div
-                                    className={`w-full h-full rounded-full flex items-center justify-center text-white font-bold text-xl ${
-                                      app.bg || "bg-gray-800"
-                                    }`}
-                                  >
-                                    {app.displayName.charAt(0).toUpperCase()}
-                                  </div>
-                                )}
-                              </div>
+                              {app.icon ? (
+                                <img
+                                  src={app.icon}
+                                  alt={`${app.displayName} logo`}
+                                  className="w-full h-full rounded-full object-cover"
+                                  loading="eager"
+                                  onError={(e) => {
+                                    // Fallback to colored background with initial letter
+                                    const img = e.target as HTMLImageElement;
+                                    img.style.display = "none";
+                                    const parent = img.parentElement;
+                                    if (
+                                      parent &&
+                                      !parent.querySelector(".fallback-initial")
+                                    ) {
+                                      const fallback =
+                                        document.createElement("div");
+                                      fallback.className = `w-full h-full rounded-full flex items-center justify-center text-white font-bold text-xl fallback-initial ${
+                                        app.bg || "bg-gray-800"
+                                      }`;
+                                      fallback.textContent = app.displayName
+                                        .charAt(0)
+                                        .toUpperCase();
+                                      parent.appendChild(fallback);
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <div
+                                  className={`w-full h-full rounded-full flex items-center justify-center text-white font-bold text-xl ${
+                                    app.bg || "bg-gray-800"
+                                  }`}
+                                >
+                                  {app.displayName.charAt(0).toUpperCase()}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </main>
-
-              <footer className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto">
-                <div className="w-full relative">
-                  <SearchIcon className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search by app name, developer, App Store URL, or App ID..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && handleSearch(searchQuery)
-                    }
-                    className="w-full pl-12 pr-4 py-3 text-base rounded-full border border-gray-700 bg-gray-900 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  />
+                      </div>
+                    );
+                  })}
                 </div>
-                <p className="text-gray-500 text-sm">
-                  Search for any app on the App Store to analyze user reviews
-                </p>
-              </footer>
-            </div>
-          )}
+              )}
+            </main>
+
+            <footer className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto">
+              <div className="w-full relative">
+                <SearchIcon className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search by app name, developer, App Store URL, or App ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && handleSearch(searchQuery)
+                  }
+                  className="w-full pl-12 pr-4 py-3 text-base rounded-full border border-gray-700 bg-gray-900 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              <p className="text-gray-500 text-sm">
+                Search for any app on the App Store to analyze user reviews
+              </p>
+            </footer>
+          </div>
+        )}
 
         {/* License Modal - Accessible from search view */}
         {showLicenseModal && (
@@ -2321,8 +2203,20 @@ ${analysisResult.marketOpportunities}
                 <button
                   onClick={() => {
                     setShowLicenseModal(false);
-                    // Always navigate to landing page pricing section
-                    window.location.href = "/#pricing";
+                    // Navigate to landing page and scroll to pricing
+                    if (window.location.pathname === "/") {
+                      // Already on landing page, just scroll
+                      setTimeout(() => {
+                        const pricingElement =
+                          document.getElementById("pricing");
+                        if (pricingElement) {
+                          pricingElement.scrollIntoView({ behavior: "smooth" });
+                        }
+                      }, 100);
+                    } else {
+                      // Navigate to landing page
+                      window.location.href = "/#pricing";
+                    }
                   }}
                   className="flex-1 bg-transparent border-2 border-orange-500 text-orange-400 font-semibold px-4 py-3 rounded-lg hover:bg-orange-500/10 transition-colors flex items-center justify-center gap-2"
                 >
@@ -2777,8 +2671,20 @@ ${analysisResult.marketOpportunities}
                 <button
                   onClick={() => {
                     setShowLicenseModal(false);
-                    // Always navigate to landing page pricing section
-                    window.location.href = "/#pricing";
+                    // Navigate to landing page and scroll to pricing
+                    if (window.location.pathname === "/") {
+                      // Already on landing page, just scroll
+                      setTimeout(() => {
+                        const pricingElement =
+                          document.getElementById("pricing");
+                        if (pricingElement) {
+                          pricingElement.scrollIntoView({ behavior: "smooth" });
+                        }
+                      }, 100);
+                    } else {
+                      // Navigate to landing page
+                      window.location.href = "/#pricing";
+                    }
                   }}
                   className="flex-1 bg-transparent border-2 border-orange-500 text-orange-400 font-semibold px-4 py-3 rounded-lg hover:bg-orange-500/10 transition-colors flex items-center justify-center gap-2"
                 >

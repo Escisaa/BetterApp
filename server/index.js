@@ -30,7 +30,7 @@ app.use(express.json());
 // Rate limiting to prevent abuse
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 200, // Limit each IP to 200 requests per windowMs (increased for icon/search)
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
@@ -38,7 +38,7 @@ const generalLimiter = rateLimit({
 
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per windowMs
+  max: 50, // Limit each IP to 50 requests per windowMs (increased for normal usage)
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
@@ -79,7 +79,7 @@ const formatCount = (num) => {
  * Search for apps using iTunes API
  * GET /api/search?q=searchTerm
  */
-app.get("/api/search", async (req, res) => {
+app.get("/api/search", generalLimiter, async (req, res) => {
   try {
     const searchTerm = req.query.q;
     const country = req.query.country || "US";
@@ -243,7 +243,7 @@ app.get("/api/app/:id", async (req, res) => {
  * Get app icon using SerpAPI
  * GET /api/icon?name=appName
  */
-app.get("/api/icon", async (req, res) => {
+app.get("/api/icon", generalLimiter, async (req, res) => {
   try {
     const appName = req.query.name;
     if (!appName) {

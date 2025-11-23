@@ -210,6 +210,38 @@ const LandingPage: React.FC<LandingPageProps> = ({
                           }),
                         }
                       );
+
+                      // Handle 429 rate limit errors
+                      if (response.status === 429) {
+                        const errorText = await response.text();
+                        alert(
+                          "Too many requests. Please wait a moment and try again."
+                        );
+                        setIsSubscribing(false);
+                        return;
+                      }
+
+                      if (!response.ok) {
+                        const errorText = await response.text();
+                        let errorMessage =
+                          "Failed to start checkout. Please try again.";
+                        try {
+                          const errorData = JSON.parse(errorText);
+                          errorMessage =
+                            errorData.message ||
+                            errorData.error ||
+                            errorMessage;
+                        } catch {
+                          // If not JSON, use the text or default message
+                          if (errorText && !errorText.includes("Too many")) {
+                            errorMessage = errorText;
+                          }
+                        }
+                        alert(errorMessage);
+                        setIsSubscribing(false);
+                        return;
+                      }
+
                       const data = await response.json();
                       if (data.url) {
                         window.location.href = data.url;
@@ -521,6 +553,38 @@ const LandingPage: React.FC<LandingPageProps> = ({
                           }),
                         }
                       );
+
+                      // Handle 429 rate limit errors
+                      if (response.status === 429) {
+                        const errorText = await response.text();
+                        alert(
+                          "Too many requests. Please wait a moment and try again."
+                        );
+                        setIsSubscribing(false);
+                        return;
+                      }
+
+                      if (!response.ok) {
+                        const errorText = await response.text();
+                        let errorMessage =
+                          "Failed to start checkout. Please try again.";
+                        try {
+                          const errorData = JSON.parse(errorText);
+                          errorMessage =
+                            errorData.message ||
+                            errorData.error ||
+                            errorMessage;
+                        } catch {
+                          // If not JSON, use the text or default message
+                          if (errorText && !errorText.includes("Too many")) {
+                            errorMessage = errorText;
+                          }
+                        }
+                        alert(errorMessage);
+                        setIsSubscribing(false);
+                        return;
+                      }
+
                       const data = await response.json();
                       if (data.url) {
                         window.location.href = data.url;

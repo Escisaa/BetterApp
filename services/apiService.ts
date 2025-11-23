@@ -46,6 +46,11 @@ export const searchApps = async (
   );
 
   if (!response.ok) {
+    // Handle 429 rate limit errors
+    if (response.status === 429) {
+      const errorText = await response.text();
+      throw new Error("Too many requests. Please wait a moment and try again.");
+    }
     throw new Error(`Failed to search apps: ${response.statusText}`);
   }
 
@@ -81,6 +86,11 @@ export const fetchAppIcon = async (appName: string): Promise<AppIconData> => {
     );
 
     if (!response.ok) {
+      // Handle 429 rate limit errors gracefully
+      if (response.status === 429) {
+        console.warn(`Rate limited for ${appName}, skipping icon fetch`);
+        return { name: appName, icon: "" };
+      }
       throw new Error(`Failed to fetch icon: ${response.statusText}`);
     }
 
