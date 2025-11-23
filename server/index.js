@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import axios from "axios";
 import path from "path";
 import { fileURLToPath } from "url";
+import rateLimit from "express-rate-limit";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,10 +12,11 @@ import {
   validateLicense,
   getLicenseInfo,
   activateLicense,
+  getSupabaseClient,
 } from "./services/licenseService.js";
 import { handleStripeWebhook } from "./services/stripeService.js";
 import { createCheckoutSession } from "./services/stripeCheckout.js";
-import { sendDownloadLink } from "./services/emailService.js";
+import { createCustomerPortalSession } from "./services/stripeCustomerPortal.js";
 
 dotenv.config();
 
@@ -24,6 +26,34 @@ const PORT = process.env.PORT || 3002;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Rate limiting to prevent abuse
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: "Too many requests from this IP, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const strictLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per windowMs
+  message: "Too many requests from this IP, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const emailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // Limit each IP to 5 email sends per hour
+  message: "Too many email requests, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply general rate limiting to all API routes
+app.use("/api/", generalLimiter);
 
 // API-only backend - frontend is served by Vercel
 // Return 404 for non-API routes
@@ -330,7 +360,7 @@ app.get("/api/icon", async (req, res) => {
  * POST /api/license/validate
  * Body: { licenseKey: string, deviceId?: string }
  */
-app.post("/api/license/validate", async (req, res) => {
+app.post("/api/license/validate", strictLimiter, async (req, res) => {
   try {
     const { licenseKey, deviceId } = req.body;
 
@@ -422,10 +452,86 @@ app.post("/api/license/activate", async (req, res) => {
 });
 
 /**
+ * Resend license key to email
+ * POST /api/license/resend
+ * Body: { email: string }
+ */
+app.post("/api/license/resend", emailLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    // Find subscription by email
+    const supabase = getSupabaseClient();
+    const { data: subscriptions, error: subError } = await supabase
+      .from("subscriptions")
+      .select("*, licenses(*)")
+      .eq("email", email)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (subError || !subscriptions || subscriptions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "No subscription found for this email",
+      });
+    }
+
+    const subscription = subscriptions[0];
+
+    if (subError || !subscription) {
+      return res.status(404).json({
+        success: false,
+        error: "No subscription found for this email",
+      });
+    }
+
+    // Get the license key
+    const license = subscription.licenses?.[0];
+    if (!license) {
+      return res.status(404).json({
+        success: false,
+        error: "No license found for this subscription",
+      });
+    }
+
+    // Resend license key email
+    const { sendLicenseKey } = await import("./services/emailService.js");
+    const emailResult = await sendLicenseKey(
+      email,
+      license.license_key,
+      subscription.plan
+    );
+
+    if (emailResult.success) {
+      res.json({
+        success: true,
+        message: "License key sent to your email",
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: emailResult.error || "Failed to send email",
+      });
+    }
+  } catch (error) {
+    console.error("Error resending license key:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to resend license key",
+      message: error.message,
+    });
+  }
+});
+
+/**
  * Create Stripe checkout session
  * POST /api/stripe/checkout
  */
-app.post("/api/stripe/checkout", async (req, res) => {
+app.post("/api/stripe/checkout", strictLimiter, async (req, res) => {
   try {
     const priceId = process.env.STRIPE_PRICE_ID;
     if (!priceId) {
@@ -454,6 +560,47 @@ app.post("/api/stripe/checkout", async (req, res) => {
   } catch (error) {
     console.error("Error creating checkout:", error);
     res.status(500).json({ error: "Failed to create checkout session" });
+  }
+});
+
+/**
+ * Create Stripe Customer Portal session (for managing subscription)
+ * POST /api/stripe/portal
+ * Body: { licenseKey: string, returnUrl?: string }
+ */
+app.post("/api/stripe/portal", strictLimiter, async (req, res) => {
+  try {
+    const { licenseKey } = req.body;
+
+    if (!licenseKey) {
+      return res.status(400).json({ error: "License key is required" });
+    }
+
+    // Get license info to find Stripe customer ID
+    const licenseInfo = await getLicenseInfo(licenseKey);
+    if (!licenseInfo || !licenseInfo.stripeCustomerId) {
+      return res.status(404).json({ error: "License not found or invalid" });
+    }
+
+    // Create portal session
+    const returnUrl =
+      req.body.returnUrl ||
+      `${
+        req.headers.origin || "https://betterapp-arsv.onrender.com"
+      }/dashboard`;
+    const result = await createCustomerPortalSession(
+      licenseInfo.stripeCustomerId,
+      returnUrl
+    );
+
+    if (result.success) {
+      res.json({ url: result.url });
+    } else {
+      res.status(500).json({ error: result.error });
+    }
+  } catch (error) {
+    console.error("Error creating portal session:", error);
+    res.status(500).json({ error: "Failed to create portal session" });
   }
 });
 

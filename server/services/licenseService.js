@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 let supabase = null;
 
-function getSupabaseClient() {
+export function getSupabaseClient() {
   if (!supabase) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_ANON_KEY;
@@ -113,6 +113,7 @@ export async function getLicenseInfo(licenseKey) {
       expiresAt: license.expires_at,
       isActive: license.is_active,
       deviceId: license.device_id,
+      stripeCustomerId: license.subscriptions?.stripe_customer_id,
     };
   } catch (error) {
     console.error("Error getting license info:", error);

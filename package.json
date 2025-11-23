@@ -8,13 +8,16 @@
     "build": "vite build",
     "preview": "vite preview",
     "build:render": "npm run build && cp -r dist/* server/public/",
-    "deploy:render": "npm run build:render"
+    "deploy:render": "npm run build:render",
+    "deploy:vercel": "vercel --prod",
+    "deploy:vercel:preview": "vercel"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
     "framer-motion": "^12.23.24",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.6",
     "recharts": "^3.4.1"
   },
   "devDependencies": {

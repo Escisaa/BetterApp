@@ -46,6 +46,10 @@ import {
   getStoredLicense,
   saveLicense,
   checkLicenseStatus,
+  getLicenseDetails,
+  openCustomerPortal,
+  resendLicenseKey,
+  type LicenseDetails,
 } from "../services/licenseService";
 import {
   StarIcon,
@@ -893,19 +897,45 @@ const Dashboard: React.FC = () => {
   const [showLicenseModal, setShowLicenseModal] = useState(false);
   const [licenseKey, setLicenseKey] = useState("");
   const [licenseError, setLicenseError] = useState("");
+  const [licenseDetails, setLicenseDetails] = useState<LicenseDetails | null>(
+    null
+  );
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [isSubmittingLicense, setIsSubmittingLicense] = useState(false);
+  const [isResendingLicense, setIsResendingLicense] = useState(false);
+  const [resendEmail, setResendEmail] = useState("");
+  const [resendStatus, setResendStatus] = useState<{
+    success: boolean;
+    message?: string;
+  } | null>(null);
   const [showFeatureRequestsModal, setShowFeatureRequestsModal] =
     useState(false);
   const [selectedTrackedApp, setSelectedTrackedApp] =
     useState<TrackedApp | null>(null);
 
-  // Check license on mount
+  // Check license on mount and show modal if no license
   useEffect(() => {
     const checkLicense = async () => {
       const valid = await checkLicenseStatus();
       setHasLicense(valid);
+      // Show license modal if no valid license
+      if (!valid) {
+        setShowLicenseModal(true);
+      } else {
+        // Load license details if valid
+        const details = await getLicenseDetails();
+        setLicenseDetails(details);
+      }
     };
     checkLicense();
   }, []);
+
+  // Refresh license details when license is activated
+  useEffect(() => {
+    if (hasLicense && !licenseDetails) {
+      getLicenseDetails().then(setLicenseDetails);
+    }
+  }, [hasLicense, licenseDetails]);
 
   // Load recent apps from localStorage and fetch initial app icons on mount
   useEffect(() => {
@@ -1173,20 +1203,78 @@ const Dashboard: React.FC = () => {
   }, [selectedApp]);
 
   const handleLicenseSubmit = async () => {
+    if (isSubmittingLicense) return;
     setLicenseError("");
     if (!licenseKey.trim()) {
       setLicenseError("Please enter a license key");
       return;
     }
 
-    const result = await validateLicense(licenseKey.trim());
-    if (result.valid) {
-      saveLicense(licenseKey.trim());
-      setHasLicense(true);
-      setShowLicenseModal(false);
-      setLicenseKey("");
-    } else {
-      setLicenseError(result.message || "Invalid license key");
+    setIsSubmittingLicense(true);
+    try {
+      const result = await validateLicense(licenseKey.trim());
+      if (result.valid) {
+        saveLicense(licenseKey.trim());
+        setHasLicense(true);
+        setShowLicenseModal(false);
+        setLicenseKey("");
+        // Load license details
+        const details = await getLicenseDetails();
+        setLicenseDetails(details);
+      } else {
+        setLicenseError(result.message || "Invalid license key");
+      }
+    } catch (error) {
+      setLicenseError("Failed to validate license. Please try again.");
+    } finally {
+      setIsSubmittingLicense(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    const storedLicense = getStoredLicense();
+    if (!storedLicense) {
+      setLicenseError("No license key found");
+      return;
+    }
+
+    setIsLoadingPortal(true);
+    try {
+      const portalUrl = await openCustomerPortal(storedLicense);
+      if (portalUrl) {
+        window.location.href = portalUrl;
+      } else {
+        setLicenseError("Failed to open subscription portal");
+      }
+    } catch (error) {
+      setLicenseError("Failed to open subscription portal");
+    } finally {
+      setIsLoadingPortal(false);
+    }
+  };
+
+  const handleResendLicense = async () => {
+    if (isResendingLicense) return;
+    if (!resendEmail.trim()) {
+      setResendStatus({ success: false, message: "Please enter your email" });
+      return;
+    }
+
+    setIsResendingLicense(true);
+    setResendStatus(null);
+    try {
+      const result = await resendLicenseKey(resendEmail.trim());
+      setResendStatus(result);
+      if (result.success) {
+        setResendEmail("");
+      }
+    } catch (error) {
+      setResendStatus({
+        success: false,
+        message: "Failed to resend license key. Please try again.",
+      });
+    } finally {
+      setIsResendingLicense(false);
     }
   };
 
@@ -2185,22 +2273,50 @@ ${analysisResult.marketOpportunities}
               <div className="flex gap-3 mb-6">
                 <button
                   onClick={handleLicenseSubmit}
-                  className="flex-1 bg-gray-700 text-white font-semibold px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
+                  disabled={isSubmittingLicense}
+                  className="flex-1 bg-gray-700 text-white font-semibold px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                    />
-                  </svg>
-                  Activate License
+                  {isSubmittingLicense ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Activating...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                        />
+                      </svg>
+                      Activate License
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={() => {
@@ -2613,22 +2729,50 @@ ${analysisResult.marketOpportunities}
               <div className="flex gap-3 mb-6">
                 <button
                   onClick={handleLicenseSubmit}
-                  className="flex-1 bg-gray-700 text-white font-semibold px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
+                  disabled={isSubmittingLicense}
+                  className="flex-1 bg-gray-700 text-white font-semibold px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                    />
-                  </svg>
-                  Activate License
+                  {isSubmittingLicense ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Activating...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                        />
+                      </svg>
+                      Activate License
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={() => {
@@ -3065,168 +3209,359 @@ ${analysisResult.marketOpportunities}
                     </div>
                   </div>
 
-                  <h2 className="text-2xl font-bold text-white text-center mb-2">
-                    Activate Premium
-                  </h2>
-                  <p className="text-gray-400 text-center mb-6">
-                    Get the best from BetterApp
-                  </p>
-
-                  <div className="mb-4">
-                    <label className="text-sm text-gray-400 mb-2 block">
-                      License Key
-                    </label>
-                    <input
-                      type="text"
-                      value={licenseKey}
-                      onChange={(e) => setLicenseKey(e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && handleLicenseSubmit()
-                      }
-                      placeholder="Enter your license key..."
-                      className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    />
-                    {licenseError && (
-                      <p className="text-red-400 text-sm mt-2">
-                        {licenseError}
+                  {hasLicense && licenseDetails ? (
+                    <>
+                      <h2 className="text-2xl font-bold text-white text-center mb-2">
+                        Subscription Active
+                      </h2>
+                      <p className="text-gray-400 text-center mb-6">
+                        Your BetterApp Premium subscription
                       </p>
-                    )}
-                  </div>
 
-                  <div className="flex gap-3 mb-6">
-                    <button
-                      onClick={handleLicenseSubmit}
-                      className="flex-1 bg-orange-600 text-white font-semibold px-4 py-3 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 shadow-lg"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                        />
-                      </svg>
-                      Activate License
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowLicenseModal(false);
-                        // Always navigate to landing page pricing section
-                        window.location.href = "/#pricing";
-                      }}
-                      className="flex-1 bg-transparent border-2 border-orange-500 text-orange-400 font-semibold px-4 py-3 rounded-lg hover:bg-orange-500/10 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
-                      View Plans
-                    </button>
-                  </div>
-
-                  {/* Premium Features */}
-                  <div className="border-t border-gray-800 pt-6">
-                    <h3 className="text-sm font-semibold text-white mb-3">
-                      Premium Features
-                    </h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3 text-sm text-gray-300">
-                        <svg
-                          className="w-5 h-5 text-orange-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                          />
-                        </svg>
-                        AI Review Analysis
+                      {/* Subscription Status */}
+                      <div className="mb-6 p-4 bg-gray-900 rounded-lg border border-gray-800">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-gray-400 text-sm">Plan</span>
+                          <span className="text-white font-semibold capitalize">
+                            {licenseDetails.plan || "Yearly"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-gray-400 text-sm">Status</span>
+                          <span
+                            className={`font-semibold ${
+                              licenseDetails.status === "active"
+                                ? "text-green-400"
+                                : "text-yellow-400"
+                            }`}
+                          >
+                            {licenseDetails.status === "active"
+                              ? "Active"
+                              : licenseDetails.status || "Active"}
+                          </span>
+                        </div>
+                        {licenseDetails.expiresAt && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400 text-sm">
+                              Expires
+                            </span>
+                            <span className="text-white text-sm">
+                              {new Date(
+                                licenseDetails.expiresAt
+                              ).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-3 text-sm text-gray-300">
-                        <svg
-                          className="w-5 h-5 text-orange-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+
+                      {/* Manage Subscription Button */}
+                      <button
+                        onClick={handleManageSubscription}
+                        disabled={isLoadingPortal}
+                        className="w-full bg-orange-600 text-white font-semibold px-4 py-3 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 mb-3 disabled:opacity-50"
+                      >
+                        {isLoadingPortal ? (
+                          <>
+                            <svg
+                              className="animate-spin h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              />
+                            </svg>
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                            </svg>
+                            Manage Subscription
+                          </>
+                        )}
+                      </button>
+
+                      {/* Resend License Key */}
+                      <div className="border-t border-gray-800 pt-4">
+                        <p className="text-gray-400 text-sm mb-3 text-center">
+                          Lost your license key?
+                        </p>
+                        <div className="mb-3">
+                          <input
+                            type="email"
+                            value={resendEmail}
+                            onChange={(e) => setResendEmail(e.target.value)}
+                            placeholder="Enter your email"
+                            className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                           />
-                        </svg>
+                        </div>
+                        <button
+                          onClick={handleResendLicense}
+                          disabled={isResendingLicense}
+                          className="w-full bg-transparent border border-gray-700 text-gray-300 font-semibold px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          {isResendingLicense ? (
+                            <>
+                              <svg
+                                className="animate-spin h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
+                              </svg>
+                              Sending...
+                            </>
+                          ) : (
+                            "Resend License Key"
+                          )}
+                        </button>
+                        {resendStatus && (
+                          <p
+                            className={`text-sm mt-2 text-center ${
+                              resendStatus.success
+                                ? "text-green-400"
+                                : "text-red-400"
+                            }`}
+                          >
+                            {resendStatus.message}
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-bold text-white text-center mb-2">
+                        Activate Premium
+                      </h2>
+                      <p className="text-gray-400 text-center mb-6">
+                        Get the best from BetterApp
+                      </p>
+
+                      <div className="mb-4">
+                        <label className="text-sm text-gray-400 mb-2 block">
+                          License Key
+                        </label>
+                        <input
+                          type="text"
+                          value={licenseKey}
+                          onChange={(e) => setLicenseKey(e.target.value)}
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && handleLicenseSubmit()
+                          }
+                          placeholder="Enter your license key..."
+                          className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        />
+                        {licenseError && (
+                          <p className="text-red-400 text-sm mt-2">
+                            {licenseError}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex gap-3 mb-6">
+                        <button
+                          onClick={handleLicenseSubmit}
+                          disabled={isSubmittingLicense}
+                          className="flex-1 bg-orange-600 text-white font-semibold px-4 py-3 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isSubmittingLicense ? (
+                            <>
+                              <svg
+                                className="animate-spin h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
+                              </svg>
+                              Activating...
+                            </>
+                          ) : (
+                            <>
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                                />
+                              </svg>
+                              Activate License
+                            </>
+                          )}
+                        </button>
                         <button
                           onClick={() => {
-                            if (
-                              selectedApp &&
-                              analysisResult &&
-                              aiTags.length > 0
-                            ) {
-                              exportAnalysisToCSV(
-                                selectedApp,
-                                analysisResult,
-                                aiTags
-                              );
-                            }
+                            setShowLicenseModal(false);
+                            // Always navigate to landing page pricing section
+                            window.location.href = "/#pricing";
                           }}
-                          className="text-sm text-gray-300 hover:text-white transition-colors"
+                          className="flex-1 bg-transparent border-2 border-orange-500 text-orange-400 font-semibold px-4 py-3 rounded-lg hover:bg-orange-500/10 transition-colors flex items-center justify-center gap-2"
                         >
-                          Export Analysis CSV
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          View Plans
                         </button>
                       </div>
-                      <div className="flex items-center gap-3 text-sm text-gray-300">
-                        <svg
-                          className="w-5 h-5 text-orange-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        "How to Beat Them" Competitive Intelligence
+
+                      {/* Premium Features */}
+                      <div className="border-t border-gray-800 pt-6">
+                        <h3 className="text-sm font-semibold text-white mb-3">
+                          Premium Features
+                        </h3>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-3 text-sm text-gray-300">
+                            <svg
+                              className="w-5 h-5 text-orange-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                              />
+                            </svg>
+                            AI Review Analysis
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-gray-300">
+                            <svg
+                              className="w-5 h-5 text-orange-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
+                            </svg>
+                            <button
+                              onClick={() => {
+                                if (
+                                  selectedApp &&
+                                  analysisResult &&
+                                  aiTags.length > 0
+                                ) {
+                                  exportAnalysisToCSV(
+                                    selectedApp,
+                                    analysisResult,
+                                    aiTags
+                                  );
+                                }
+                              }}
+                              className="text-sm text-gray-300 hover:text-white transition-colors"
+                            >
+                              Export Analysis CSV
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-gray-300">
+                            <svg
+                              className="w-5 h-5 text-orange-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            "How to Beat Them" Competitive Intelligence
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-gray-300">
+                            <svg
+                              className="w-5 h-5 text-orange-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13 10V3L4 14h7v7l9-11h-7z"
+                              />
+                            </svg>
+                            Unlimited Usage
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 text-sm text-gray-300">
-                        <svg
-                          className="w-5 h-5 text-orange-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 10V3L4 14h7v7l9-11h-7z"
-                          />
-                        </svg>
-                        Unlimited Usage
-                      </div>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
