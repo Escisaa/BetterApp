@@ -200,7 +200,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   Subscribe
                 </motion.button>
                 <motion.a
-                  href="https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp-1.0.0-arm64.dmg"
+                  href="https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp.dmg"
                   download="BetterApp.dmg"
                   className={`bg-transparent font-semibold px-6 py-3 rounded-lg border ${
                     isDark
@@ -421,16 +421,14 @@ const LandingPage: React.FC<LandingPageProps> = ({
                 <button
                   onClick={async () => {
                     try {
-                      // Use relative URLs in production (same domain), otherwise use env var
-                      const API_URL =
-                        typeof window !== "undefined" &&
-                        window.location.hostname !== "localhost" &&
-                        !window.location.hostname.includes("127.0.0.1")
-                          ? "" // Production: use relative URL (same domain)
-                          : (
-                              import.meta.env.VITE_API_URL ||
-                              "http://localhost:3002"
-                            ).replace(/[.\/]+$/, "");
+                      // Use Render backend URL in production (Vercel), or env var, or localhost
+                      const API_URL = import.meta.env.VITE_API_URL
+                        ? import.meta.env.VITE_API_URL.replace(/[.\/]+$/, "")
+                        : typeof window !== "undefined" &&
+                          window.location.hostname !== "localhost" &&
+                          !window.location.hostname.includes("127.0.0.1")
+                        ? "https://appsight-ai.onrender.com"
+                        : "http://localhost:3002";
                       const response = await fetch(
                         `${API_URL}/api/stripe/checkout`,
                         {

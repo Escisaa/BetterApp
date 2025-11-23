@@ -1,25 +1,25 @@
 // New API service that uses the backend instead of direct API calls
 import { App } from "../types";
 
-// Use relative URLs when frontend and backend are on same domain (production)
-// Otherwise use environment variable or localhost for development
+// Use Render backend URL when on Vercel (production), or env var, or localhost
 const getApiBaseUrl = (): string => {
-  // Check if we're in browser and on production domain
+  // Check for explicit backend URL in env (for Vercel deployment)
+  const envUrl = import.meta.env?.VITE_API_URL as string;
+  if (envUrl) {
+    return envUrl.replace(/[.\/]+$/, "");
+  }
+
+  // Production (Vercel): use Render backend URL
   if (
     typeof window !== "undefined" &&
     window.location.hostname !== "localhost" &&
     !window.location.hostname.includes("127.0.0.1")
   ) {
-    // Production: frontend and backend on same domain, use relative URLs
-    return ""; // Empty string = relative URLs (same domain)
+    // Use Render backend - update this with your actual Render URL
+    return "https://appsight-ai.onrender.com";
   }
 
-  // Development: use env var or localhost
-  const envUrl = import.meta.env?.VITE_API_URL as string;
-  if (envUrl) {
-    // Remove trailing slash and dots
-    return envUrl.replace(/[.\/]+$/, "");
-  }
+  // Development: localhost
   return "http://localhost:3002";
 };
 

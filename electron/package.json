@@ -14,6 +14,7 @@
   "build": {
     "appId": "com.betterapp.desktop",
     "productName": "BetterApp",
+    "afterPack": "./afterPack.js",
     "directories": {
       "output": "release"
     },
@@ -42,6 +43,8 @@
       "identity": null
     },
     "dmg": {
+      "title": "BetterApp",
+      "artifactName": "BetterApp.dmg",
       "contents": [
         {
           "x": 130,

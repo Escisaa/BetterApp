@@ -1,9 +1,37 @@
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production
 dist/
-electron/node_modules/
-electron/release/
-server/node_modules/
-.env
-server/.env
-*.log
+build/
+server/public/
+
+# Misc
 .DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Electron
+electron/release/
+*.dmg
+*.pkg
+*.blockmap
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
