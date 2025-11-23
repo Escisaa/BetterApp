@@ -15,6 +15,7 @@
     "appId": "com.betterapp.desktop",
     "productName": "BetterApp",
     "afterPack": "./afterPack.js",
+    "afterSign": "./afterSign.js",
     "directories": {
       "output": "release"
     },

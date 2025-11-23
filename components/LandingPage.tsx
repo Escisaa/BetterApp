@@ -15,6 +15,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   onGetStarted = () => {},
 }) => {
   const [isDark, setIsDark] = useState(true);
+  const [showInstallModal, setShowInstallModal] = useState(false);
 
   useEffect(() => {
     // Apply theme to document
@@ -199,9 +200,8 @@ const LandingPage: React.FC<LandingPageProps> = ({
                 >
                   Subscribe
                 </motion.button>
-                <motion.a
-                  href="https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp.dmg"
-                  download="BetterApp.dmg"
+                <motion.button
+                  onClick={() => setShowInstallModal(true)}
                   className={`bg-transparent font-semibold px-6 py-3 rounded-lg border ${
                     isDark
                       ? "text-white border-gray-700 hover:bg-gray-800"
@@ -216,7 +216,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                     macOS
                   </span>
-                </motion.a>
+                </motion.button>
               </div>
               <p
                 className={`text-xs ${
@@ -474,6 +474,136 @@ const LandingPage: React.FC<LandingPageProps> = ({
       </main>
 
       <Footer isDark={isDark} />
+
+      {/* Installation Instructions Modal */}
+      {showInstallModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto ${
+              isDark
+                ? "bg-[#1C1C1E] border border-gray-800"
+                : "bg-white border border-gray-200"
+            }`}
+          >
+            <div className="flex justify-between items-start mb-6">
+              <h3
+                className={`text-2xl font-bold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
+                📥 Install BetterApp
+              </h3>
+              <button
+                onClick={() => setShowInstallModal(false)}
+                className={`text-2xl ${
+                  isDark
+                    ? "text-gray-400 hover:text-white"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                ×
+              </button>
+            </div>
+
+            <div
+              className={`space-y-6 ${
+                isDark ? "text-gray-300" : "text-gray-700"
+              }`}
+            >
+              <div>
+                <h4
+                  className={`font-semibold mb-3 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Step 1: Download
+                </h4>
+                <a
+                  href="https://github.com/Escisaa/BetterApp/releases/download/v1.0.0/BetterApp.dmg"
+                  download="BetterApp.dmg"
+                  className="inline-block bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors mb-4"
+                >
+                  Download BetterApp.dmg
+                </a>
+              </div>
+
+              <div>
+                <h4
+                  className={`font-semibold mb-3 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Step 2: Open the DMG
+                </h4>
+                <p>Double-click the downloaded file to mount it.</p>
+              </div>
+
+              <div>
+                <h4
+                  className={`font-semibold mb-3 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Step 3: Install
+                </h4>
+                <p>Drag "BetterApp" to your Applications folder.</p>
+              </div>
+
+              <div>
+                <h4
+                  className={`font-semibold mb-3 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Step 4: Open BetterApp (Important!)
+                </h4>
+                <p className="mb-3">
+                  macOS may show a security warning. This is normal for apps not
+                  from the App Store.
+                </p>
+                <div
+                  className={`p-4 rounded-lg ${
+                    isDark ? "bg-gray-900" : "bg-gray-100"
+                  }`}
+                >
+                  <p className="font-semibold mb-2">Option A (Recommended):</p>
+                  <ol className="list-decimal list-inside space-y-1 text-sm">
+                    <li>Open Finder → Applications folder</li>
+                    <li>Right-click (or Control-click) "BetterApp"</li>
+                    <li>Select "Open" from the menu</li>
+                    <li>Click "Open" in the security dialog</li>
+                  </ol>
+                  <p className="font-semibold mt-4 mb-2">Option B:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-sm">
+                    <li>Go to System Settings → Privacy & Security</li>
+                    <li>Find "BetterApp was blocked..."</li>
+                    <li>Click "Open Anyway"</li>
+                  </ol>
+                </div>
+                <p className="mt-3 text-sm italic">
+                  After opening once, BetterApp will work normally. You can
+                  double-click it like any other app.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setShowInstallModal(false)}
+                className={`flex-1 px-6 py-3 rounded-lg border ${
+                  isDark
+                    ? "border-gray-700 text-gray-400 hover:bg-gray-800"
+                    : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                } transition-colors`}
+              >
+                Got it
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 };
