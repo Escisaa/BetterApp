@@ -25,37 +25,14 @@ const PORT = process.env.PORT || 3002;
 app.use(cors());
 app.use(express.json());
 
-// Serve static files (desktop app downloads and React app)
-const publicPath = path.join(__dirname, "public");
-app.use(
-  express.static(publicPath, {
-    // Don't set index to false, but handle it in the catch-all
-    index: false,
-  })
-);
-
-// Serve React app for all non-API routes (SPA routing)
+// API-only backend - frontend is served by Vercel
+// Return 404 for non-API routes
 app.get("*", (req, res, next) => {
-  // Skip API routes
   if (req.path.startsWith("/api/")) {
-    return next();
+    return next(); // Let API routes through
   }
-  // Skip static files with extensions (let express.static handle them)
-  // This allows .dmg, .png, .js, .css, etc. to be served
-  if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
-    return next(); // Let express.static handle it (or 404 if not found)
-  }
-  // Serve index.html for all other routes (React Router)
-  res.sendFile(path.join(publicPath, "index.html"), (err) => {
-    if (err) {
-      // If index.html doesn't exist, it means React app isn't built yet
-      // This is fine for development
-      res.status(404).json({
-        error:
-          "Frontend not built. Run 'npm run build' and copy dist/ to server/public/",
-      });
-    }
-  });
+  // All other routes return 404 (frontend is on Vercel)
+  res.status(404).json({ error: "Not found. Frontend is served by Vercel." });
 });
 
 // Environment variables
