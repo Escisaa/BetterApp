@@ -15,8 +15,8 @@ const getApiBaseUrl = (): string => {
     window.location.hostname !== "localhost" &&
     !window.location.hostname.includes("127.0.0.1")
   ) {
-    // Use Render backend - update this with your actual Render URL
-    return "https://appsight-ai.onrender.com";
+    // Use Render backend - fallback if VITE_API_URL not set
+    return "https://betterapp-arsv.onrender.com";
   }
 
   // Development: localhost

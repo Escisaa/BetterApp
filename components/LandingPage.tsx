@@ -427,7 +427,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                         : typeof window !== "undefined" &&
                           window.location.hostname !== "localhost" &&
                           !window.location.hostname.includes("127.0.0.1")
-                        ? "https://appsight-ai.onrender.com"
+                        ? "https://betterapp-arsv.onrender.com"
                         : "http://localhost:3002";
                       const response = await fetch(
                         `${API_URL}/api/stripe/checkout`,
