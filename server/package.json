@@ -1,7 +1,7 @@
 {
-  "name": "appscope-backend",
+  "name": "betterapp-backend",
   "version": "1.0.0",
-  "description": "Backend API server for AppScope",
+  "description": "Backend API server for BetterApp",
   "type": "module",
   "main": "index.js",
   "scripts": {

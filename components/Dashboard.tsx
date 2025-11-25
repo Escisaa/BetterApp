@@ -998,13 +998,13 @@ const Dashboard: React.FC = () => {
       // Batch icon fetches to avoid rate limiting
       const BATCH_SIZE = 3;
       const DELAY_BETWEEN_BATCHES = 300; // 300ms delay between batches
-      
+
       const updatedApps = [...appsToShow];
 
       // Process icons in batches with delays
       for (let i = 0; i < appsToShow.length; i += BATCH_SIZE) {
         const batch = appsToShow.slice(i, i + BATCH_SIZE);
-        
+
         await Promise.all(
           batch.map(async (app, batchIndex) => {
             // If app already has an icon, keep it
@@ -1027,7 +1027,7 @@ const Dashboard: React.FC = () => {
                   iconUrl = iconData.icon;
                   appName = iconData.name.split(/[:–-]/)[0].trim();
                   console.log(`✓ Fetched ${app.displayName} icon`);
-                  
+
                   // Update immediately for progressive enhancement
                   const appIndex = i + batchIndex;
                   if (appIndex < updatedApps.length) {
@@ -1059,7 +1059,9 @@ const Dashboard: React.FC = () => {
 
         // Delay between batches to avoid rate limiting
         if (i + BATCH_SIZE < appsToShow.length) {
-          await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+          await new Promise((resolve) =>
+            setTimeout(resolve, DELAY_BETWEEN_BATCHES)
+          );
         }
       }
 

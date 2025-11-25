@@ -4,7 +4,6 @@ import Logo from "./Logo";
 import InAction from "./InAction";
 import ChatDemo from "./ChatDemo";
 import MobileMockupSection from "./MobileMockupSection";
-import FAQ from "./FAQ";
 import Footer from "./Footer";
 
 interface LandingPageProps {
@@ -642,8 +641,6 @@ const LandingPage: React.FC<LandingPageProps> = ({
             </div>
           </div>
         </motion.section>
-
-        <FAQ isDark={isDark} />
       </main>
 
       <Footer isDark={isDark} />

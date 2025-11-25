@@ -142,7 +142,7 @@ const ChatDemo: React.FC<ChatDemoProps> = ({ isDark = true }) => {
                 </div>
                 <div className="bg-blue-600/80 text-white px-4 py-3 rounded-xl rounded-tl-none">
                   <p className="text-sm font-medium text-blue-200 mb-1">
-                    AppScope
+                    BetterApp
                   </p>
                   <p className="text-sm">
                     Based on 2,847 recent reviews, users frequently mention that

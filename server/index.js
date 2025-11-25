@@ -773,7 +773,7 @@ app.get("/api/health", (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 AppScope Backend API running on http://localhost:${PORT}`);
+  console.log(`🚀 BetterApp Backend API running on http://localhost:${PORT}`);
   console.log(`📡 API endpoints:`);
   console.log(`   GET /api/health - Health check`);
   console.log(`   GET /api/search?q=term - Search apps`);

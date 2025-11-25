@@ -4,9 +4,9 @@ import { PlusIcon, MinusIcon } from "./Icons";
 
 const faqData = [
   {
-    question: "What is AppScope?",
+    question: "What is BetterApp?",
     answer:
-      "AppScope is a powerful competitor analysis tool for mobile app developers and product managers. It uses AI to analyze user reviews, market data, and app performance metrics to provide actionable insights that help you build better products and make smarter business decisions.",
+      "BetterApp is a powerful competitor analysis tool for mobile app developers and product managers. It uses AI to analyze user reviews, market data, and app performance metrics to provide actionable insights that help you build better products and make smarter business decisions.",
   },
   {
     question: "How does the AI analysis work?",
