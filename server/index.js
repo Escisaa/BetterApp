@@ -768,6 +768,9 @@ app.get("/api/health", (req, res) => {
     supabase: process.env.SUPABASE_URL ? "configured" : "not configured",
     stripe: process.env.STRIPE_WEBHOOK_SECRET ? "configured" : "not configured",
     gemini: process.env.GEMINI_API_KEY ? "configured" : "not configured",
+    email: process.env.EMAIL_PASSWORD
+      ? "configured"
+      : "not configured (license emails won't send)",
   });
 });
 
@@ -782,6 +785,21 @@ app.listen(PORT, () => {
   if (!SERPAPI_API_KEY) {
     console.log(
       `⚠️  SERPAPI_API_KEY not set - icon fetching will use iTunes only`
+    );
+  }
+  if (!process.env.EMAIL_PASSWORD) {
+    console.log(
+      `⚠️  EMAIL_PASSWORD not set - license emails will NOT be sent!`
+    );
+    console.log(
+      `   Set EMAIL_PASSWORD (Resend API key) in Render environment variables`
+    );
+  } else {
+    console.log(`✅ Email service configured (Resend)`);
+  }
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    console.log(
+      `⚠️  STRIPE_WEBHOOK_SECRET not set - Stripe webhooks will fail!`
     );
   }
 });

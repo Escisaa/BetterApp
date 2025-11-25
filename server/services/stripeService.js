@@ -2,6 +2,15 @@
 import { createClient } from "@supabase/supabase-js";
 import { sendLicenseKey } from "./emailService.js";
 
+// Import Stripe for customer lookup
+let StripeModule = null;
+async function getStripe() {
+  if (!StripeModule) {
+    StripeModule = (await import("stripe")).default;
+  }
+  return StripeModule;
+}
+
 let supabase = null;
 
 function getSupabaseClient() {
@@ -34,6 +43,23 @@ function generateLicenseKey() {
  */
 export async function handleStripeWebhook(event) {
   try {
+    // Handle checkout.session.completed (happens first, has customer email)
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+
+      // Only process if it's a subscription
+      if (session.mode === "subscription" && session.customer_email) {
+        console.log(
+          `Checkout completed for ${session.customer_email}, waiting for subscription.created event...`
+        );
+        // The subscription.created event will handle the license creation
+        return {
+          success: true,
+          message: "Checkout completed, waiting for subscription",
+        };
+      }
+    }
+
     if (event.type === "customer.subscription.created") {
       const subscription = event.data.object;
 
@@ -88,11 +114,40 @@ export async function handleStripeWebhook(event) {
         return { success: false, error: licenseError.message };
       }
 
-      // Send license key to customer email
-      const customerEmail =
+      // Fetch customer email from Stripe
+      let customerEmail =
         subscription.customer_email ||
         subData.email ||
         subscription.metadata?.email;
+
+      // If no email, fetch customer from Stripe
+      if (!customerEmail && subscription.customer) {
+        try {
+          const Stripe = await getStripe();
+          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+          const customer = await stripe.customers.retrieve(
+            subscription.customer
+          );
+          if (customer && !customer.deleted && customer.email) {
+            customerEmail = customer.email;
+            // Update subscription with email
+            await supabase
+              .from("subscriptions")
+              .update({ email: customerEmail })
+              .eq("id", subData.id);
+            console.log(
+              `✅ Fetched customer email from Stripe: ${customerEmail}`
+            );
+          }
+        } catch (customerError) {
+          console.warn(
+            "Failed to fetch customer from Stripe:",
+            customerError.message
+          );
+        }
+      }
+
+      // Send license key to customer email
       if (customerEmail) {
         const emailResult = await sendLicenseKey(
           customerEmail,
@@ -101,11 +156,19 @@ export async function handleStripeWebhook(event) {
         );
         if (!emailResult.success) {
           console.error("Failed to send license email:", emailResult.error);
-          // Don't fail the webhook if email fails
+          // Log the license key so it can be manually sent
+          console.log(
+            `⚠️  License key generated but email failed: ${licenseKey} for ${customerEmail}`
+          );
+        } else {
+          console.log(`✅ License email sent successfully to ${customerEmail}`);
         }
       } else {
         console.warn(
-          `No email found for subscription ${subscription.id}, license key: ${licenseKey}`
+          `⚠️  No email found for subscription ${subscription.id}, license key: ${licenseKey}`
+        );
+        console.log(
+          `⚠️  License key generated: ${licenseKey} - Email must be sent manually`
         );
       }
 
