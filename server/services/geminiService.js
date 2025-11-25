@@ -1,12 +1,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const API_KEY = process.env.GEMINI_API_KEY;
+// Lazy initialization - only check API key when actually needed
+let ai = null;
 
-if (!API_KEY) {
-  throw new Error("GEMINI_API_KEY environment variable not set");
+function getAI() {
+  if (!ai) {
+    const API_KEY = process.env.GEMINI_API_KEY;
+    if (!API_KEY) {
+      throw new Error("GEMINI_API_KEY environment variable not set");
+    }
+    ai = new GoogleGenAI({ apiKey: API_KEY });
+  }
+  return ai;
 }
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 const analysisSchema = {
   type: Type.OBJECT,
@@ -89,7 +95,7 @@ export async function analyzeReviewsWithAI(appName, reviews) {
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const response = await ai.models.generateContent({
+      const response = await getAI().models.generateContent({
         model: "gemini-2.5-pro",
         contents: prompt,
         config: {
@@ -159,7 +165,7 @@ Return ONLY a JSON array of tag strings, nothing else. Each tag should be 1-3 wo
 Tags:`;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: "gemini-flash-lite-latest",
       contents: prompt,
       config: {
@@ -229,7 +235,7 @@ ${
 Provide a brief, smart answer. Focus on key insights, not lengthy explanations.`;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {
@@ -366,7 +372,7 @@ export async function analyzeCompetitiveIntelligence(
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const response = await ai.models.generateContent({
+      const response = await getAI().models.generateContent({
         model: "gemini-2.5-pro",
         contents: prompt,
         config: {
