@@ -995,59 +995,77 @@ const Dashboard: React.FC = () => {
     const fetchInitialIcons = async () => {
       console.log("Fetching initial app icons for wheel...");
 
-      const updatedApps = await Promise.all(
-        appsToShow.map(async (app, index) => {
-          // If app already has an icon, keep it
-          if (app.icon && app.icon.startsWith("http")) {
-            return app;
-          }
+      // Batch icon fetches to avoid rate limiting
+      const BATCH_SIZE = 3;
+      const DELAY_BETWEEN_BATCHES = 300; // 300ms delay between batches
+      
+      const updatedApps = [...appsToShow];
 
-          try {
-            // Try iTunes API first
-            let iconUrl = "";
-            let appId = app.id;
-            let appName = app.displayName;
+      // Process icons in batches with delays
+      for (let i = 0; i < appsToShow.length; i += BATCH_SIZE) {
+        const batch = appsToShow.slice(i, i + BATCH_SIZE);
+        
+        await Promise.all(
+          batch.map(async (app, batchIndex) => {
+            // If app already has an icon, keep it
+            if (app.icon && app.icon.startsWith("http")) {
+              return;
+            }
 
-            // Use fetchAppIcon which goes through backend
             try {
-              const iconData = await fetchAppIcon(
-                app.searchTerm || app.displayName
-              );
-              if (iconData && iconData.icon) {
-                iconUrl = iconData.icon;
-                appName = iconData.name.split(/[:–-]/)[0].trim();
-                console.log(`✓ Fetched ${app.displayName} icon`);
-              }
-            } catch (iconError) {
-              console.warn(
-                `Failed to fetch icon for ${app.displayName}:`,
-                iconError
-              );
-            }
+              // Try iTunes API first
+              let iconUrl = "";
+              let appId = app.id;
+              let appName = app.displayName;
 
-            if (iconUrl) {
-              return {
-                ...app,
-                icon: iconUrl,
-                id: appId,
-                searchTerm: app.searchTerm || app.displayName,
-                displayName: appName,
-              };
+              // Use fetchAppIcon which goes through backend
+              try {
+                const iconData = await fetchAppIcon(
+                  app.searchTerm || app.displayName
+                );
+                if (iconData && iconData.icon) {
+                  iconUrl = iconData.icon;
+                  appName = iconData.name.split(/[:–-]/)[0].trim();
+                  console.log(`✓ Fetched ${app.displayName} icon`);
+                  
+                  // Update immediately for progressive enhancement
+                  const appIndex = i + batchIndex;
+                  if (appIndex < updatedApps.length) {
+                    updatedApps[appIndex] = {
+                      ...updatedApps[appIndex],
+                      icon: iconUrl,
+                      id: appId,
+                      searchTerm: app.searchTerm || app.displayName,
+                      displayName: appName,
+                    };
+                    setBubbleApps([...updatedApps]);
+                  }
+                }
+              } catch (iconError) {
+                // Silently fail - icons are non-critical
+                console.warn(
+                  `Failed to fetch icon for ${app.displayName}:`,
+                  iconError
+                );
+              }
+            } catch (error) {
+              console.error(
+                `Failed to fetch icon for ${app.displayName}:`,
+                error
+              );
             }
-          } catch (error) {
-            console.error(
-              `Failed to fetch icon for ${app.displayName}:`,
-              error
-            );
-          }
-          // Return app with placeholder if fetch fails
-          return app;
-        })
-      );
+          })
+        );
+
+        // Delay between batches to avoid rate limiting
+        if (i + BATCH_SIZE < appsToShow.length) {
+          await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+        }
+      }
 
       console.log(
         "Updated bubble apps:",
-        updatedApps.filter((a) => a.icon).length,
+        updatedApps.filter((a) => a.icon && a.icon.startsWith("http")).length,
         "apps with icons"
       );
       setBubbleApps(updatedApps);

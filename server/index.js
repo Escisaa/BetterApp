@@ -33,23 +33,36 @@ const PORT = process.env.PORT || 3002;
 app.use(cors());
 app.use(express.json());
 
-// Rate limiting to prevent abuse
+// Rate limiting to prevent abuse - Production-ready limits
+// Icon fetches are non-critical, so they get very lenient limits
+const iconLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500, // Very lenient for icon fetches (non-critical)
+  message: "Too many requests. Please wait a moment and try again.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful requests
+});
+
+// General API routes (search, etc.) - increased for production
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per windowMs (increased for icon/search)
-  message: "Too many requests from this IP, please try again later.",
+  max: 1000, // Increased significantly for production (was 200)
+  message: "Too many requests. Please wait a moment and try again.",
   standardHeaders: true,
   legacyHeaders: false,
 });
 
+// Strict limiter for premium/AI features
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Limit each IP to 50 requests per windowMs (increased for normal usage)
-  message: "Too many requests from this IP, please try again later.",
+  max: 300, // Increased for production (was 50)
+  message: "Too many requests. Please wait a moment and try again.",
   standardHeaders: true,
   legacyHeaders: false,
 });
 
+// Email limiter - keep strict to prevent spam
 const emailLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 5, // Limit each IP to 5 email sends per hour
@@ -58,8 +71,14 @@ const emailLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Apply general rate limiting to all API routes
-app.use("/api/", generalLimiter);
+// Apply general rate limiting to all API routes (except icon which has its own limiter)
+app.use("/api/", (req, res, next) => {
+  // Skip rate limiting for icon fetches (they have their own lenient limiter)
+  if (req.path === "/icon" || req.path.startsWith("/icon")) {
+    return next();
+  }
+  return generalLimiter(req, res, next);
+});
 
 // API-only backend - frontend is served by Vercel
 // Return 404 for non-API routes
@@ -85,7 +104,7 @@ const formatCount = (num) => {
  * Search for apps using iTunes API
  * GET /api/search?q=searchTerm
  */
-app.get("/api/search", generalLimiter, async (req, res) => {
+app.get("/api/search", async (req, res) => {
   try {
     const searchTerm = req.query.q;
     const country = req.query.country || "US";
@@ -249,7 +268,7 @@ app.get("/api/app/:id", async (req, res) => {
  * Get app icon using SerpAPI
  * GET /api/icon?name=appName
  */
-app.get("/api/icon", generalLimiter, async (req, res) => {
+app.get("/api/icon", iconLimiter, async (req, res) => {
   try {
     const appName = req.query.name;
     if (!appName) {
