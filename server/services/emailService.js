@@ -1,45 +1,45 @@
-// Email Service - Sends license keys and download links to customers
-import nodemailer from "nodemailer";
+// Email Service - Sends license keys using Resend API
+import { Resend } from "resend";
 
-let transporter = null;
+let resendClient = null;
 
-function getEmailTransporter() {
-  if (!transporter) {
-    // Resend configuration
-    const emailHost = process.env.EMAIL_HOST || "smtp.resend.com";
-    const emailPort = parseInt(process.env.EMAIL_PORT || "587");
-    const emailUser = process.env.EMAIL_USER || "resend";
-    const emailPassword = process.env.EMAIL_PASSWORD; // Resend API key
+function getResendClient() {
+  if (!resendClient) {
+    const apiKey = process.env.EMAIL_PASSWORD || process.env.RESEND_API_KEY;
 
-    if (!emailPassword) {
+    if (!apiKey) {
       console.warn(
-        "Email not configured. Set EMAIL_PASSWORD (Resend API key) in .env"
+        "Resend API key not configured. Set EMAIL_PASSWORD or RESEND_API_KEY in environment variables"
       );
       return null;
     }
 
-    transporter = nodemailer.createTransport({
-      host: emailHost,
-      port: emailPort,
-      secure: false, // Resend uses port 587 with STARTTLS
-      auth: {
-        user: emailUser,
-        pass: emailPassword, // This is the Resend API key
-      },
-    });
+    resendClient = new Resend(apiKey);
   }
-  return transporter;
+  return resendClient;
 }
 
 /**
- * Send license key to customer email
+ * Send license key to customer email using Resend
  */
 export async function sendLicenseKey(email, licenseKey, plan = "yearly") {
   try {
-    const transporter = getEmailTransporter();
-    if (!transporter) {
-      console.error("Email transporter not configured");
-      return { success: false, error: "Email not configured" };
+    const resend = getResendClient();
+    if (!resend) {
+      console.error("Resend client not configured");
+      return { success: false, error: "Email service not configured" };
+    }
+
+    // Validate email configuration
+    const emailFrom = process.env.EMAIL_FROM;
+    if (!emailFrom || !emailFrom.includes("@")) {
+      console.error(
+        "EMAIL_FROM must be a valid email address (e.g., noreply@yourdomain.com)"
+      );
+      return {
+        success: false,
+        error: "Email sender address not configured properly",
+      };
     }
 
     const planText = plan === "yearly" ? "Yearly" : "Monthly";
@@ -48,20 +48,8 @@ export async function sendLicenseKey(email, licenseKey, plan = "yearly") {
       expiryDate.getFullYear() + (plan === "yearly" ? 1 : 0)
     );
 
-    // Validate email configuration
-    const emailFrom = process.env.EMAIL_FROM || process.env.EMAIL_USER;
-    if (!emailFrom || !emailFrom.includes("@")) {
-      console.error(
-        "EMAIL_FROM or EMAIL_USER must be a valid email address (e.g., noreply@yourdomain.com)"
-      );
-      return {
-        success: false,
-        error: "Email sender address not configured properly",
-      };
-    }
-
-    const mailOptions = {
-      from: `"BetterApp" <${emailFrom}>`,
+    const { data, error } = await resend.emails.send({
+      from: `BetterApp <${emailFrom}>`,
       to: email,
       subject: "Your BetterApp License Key",
       html: `
@@ -152,13 +140,17 @@ What you get:
 
 Happy analyzing!
       `,
-    };
+    });
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`License email sent to ${email}: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
+    if (error) {
+      console.error("Resend API error:", error);
+      return { success: false, error: error.message || "Failed to send email" };
+    }
+
+    console.log(`License email sent to ${email} via Resend (ID: ${data?.id})`);
+    return { success: true, messageId: data?.id };
   } catch (error) {
     console.error("Error sending license email:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || "Failed to send email" };
   }
 }

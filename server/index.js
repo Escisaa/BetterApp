@@ -791,24 +791,24 @@ app.listen(PORT, () => {
       `⚠️  SERPAPI_API_KEY not set - icon fetching will use iTunes only`
     );
   }
-  if (!process.env.EMAIL_PASSWORD) {
+  if (!process.env.EMAIL_PASSWORD && !process.env.RESEND_API_KEY) {
     console.log(
-      `⚠️  EMAIL_PASSWORD not set - license emails will NOT be sent!`
+      `⚠️  EMAIL_PASSWORD or RESEND_API_KEY not set - license emails will NOT be sent!`
     );
     console.log(
       `   Set EMAIL_PASSWORD (Resend API key) in Render environment variables`
     );
   } else {
-    const emailFrom = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+    const emailFrom = process.env.EMAIL_FROM;
     if (!emailFrom || !emailFrom.includes("@")) {
       console.log(
-        `⚠️  EMAIL_FROM not set or invalid - license emails may fail!`
+        `⚠️  EMAIL_FROM not set or invalid - license emails will fail!`
       );
       console.log(
-        `   Set EMAIL_FROM to a valid email (e.g., noreply@yourdomain.com)`
+        `   Set EMAIL_FROM to a verified email in Resend (e.g., noreply@yourdomain.com)`
       );
     } else {
-      console.log(`✅ Email service configured (Resend)`);
+      console.log(`✅ Email service configured (Resend API)`);
       console.log(`   From: ${emailFrom}`);
     }
   }
