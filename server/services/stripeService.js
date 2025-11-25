@@ -149,27 +149,40 @@ export async function handleStripeWebhook(event) {
 
       // Send license key to customer email
       if (customerEmail) {
+        console.log(
+          `📧 Attempting to send license email to ${customerEmail}...`
+        );
         const emailResult = await sendLicenseKey(
           customerEmail,
           licenseKey,
           subData.plan
         );
         if (!emailResult.success) {
-          console.error("Failed to send license email:", emailResult.error);
-          // Log the license key so it can be manually sent
-          console.log(
-            `⚠️  License key generated but email failed: ${licenseKey} for ${customerEmail}`
+          console.error(
+            `❌ FAILED to send license email to ${customerEmail}:`,
+            emailResult.error
           );
+          // CRITICAL: Always log the license key so it can be manually sent
+          console.log(`\n⚠️  ===========================================`);
+          console.log(`⚠️  LICENSE KEY GENERATED BUT EMAIL FAILED!`);
+          console.log(`⚠️  Email: ${customerEmail}`);
+          console.log(`⚠️  License Key: ${licenseKey}`);
+          console.log(`⚠️  Subscription ID: ${subscription.id}`);
+          console.log(`⚠️  ===========================================\n`);
+          // Don't fail the webhook - license is still created
         } else {
-          console.log(`✅ License email sent successfully to ${customerEmail}`);
+          console.log(
+            `✅ License email sent successfully to ${customerEmail} (Message ID: ${emailResult.messageId})`
+          );
         }
       } else {
-        console.warn(
-          `⚠️  No email found for subscription ${subscription.id}, license key: ${licenseKey}`
-        );
-        console.log(
-          `⚠️  License key generated: ${licenseKey} - Email must be sent manually`
-        );
+        console.warn(`⚠️  No email found for subscription ${subscription.id}`);
+        console.log(`\n⚠️  ===========================================`);
+        console.log(`⚠️  LICENSE KEY GENERATED BUT NO EMAIL!`);
+        console.log(`⚠️  License Key: ${licenseKey}`);
+        console.log(`⚠️  Subscription ID: ${subscription.id}`);
+        console.log(`⚠️  Customer ID: ${subscription.customer || "N/A"}`);
+        console.log(`⚠️  ===========================================\n`);
       }
 
       console.log(

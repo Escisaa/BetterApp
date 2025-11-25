@@ -799,7 +799,18 @@ app.listen(PORT, () => {
       `   Set EMAIL_PASSWORD (Resend API key) in Render environment variables`
     );
   } else {
-    console.log(`✅ Email service configured (Resend)`);
+    const emailFrom = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+    if (!emailFrom || !emailFrom.includes("@")) {
+      console.log(
+        `⚠️  EMAIL_FROM not set or invalid - license emails may fail!`
+      );
+      console.log(
+        `   Set EMAIL_FROM to a valid email (e.g., noreply@yourdomain.com)`
+      );
+    } else {
+      console.log(`✅ Email service configured (Resend)`);
+      console.log(`   From: ${emailFrom}`);
+    }
   }
   if (!process.env.STRIPE_WEBHOOK_SECRET) {
     console.log(

@@ -48,8 +48,20 @@ export async function sendLicenseKey(email, licenseKey, plan = "yearly") {
       expiryDate.getFullYear() + (plan === "yearly" ? 1 : 0)
     );
 
+    // Validate email configuration
+    const emailFrom = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+    if (!emailFrom || !emailFrom.includes("@")) {
+      console.error(
+        "EMAIL_FROM or EMAIL_USER must be a valid email address (e.g., noreply@yourdomain.com)"
+      );
+      return {
+        success: false,
+        error: "Email sender address not configured properly",
+      };
+    }
+
     const mailOptions = {
-      from: `"BetterApp" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+      from: `"BetterApp" <${emailFrom}>`,
       to: email,
       subject: "Your BetterApp License Key",
       html: `
