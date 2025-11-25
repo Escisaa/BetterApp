@@ -391,6 +391,11 @@ const AITags: React.FC<{ tags: string[]; hasLicense?: boolean }> = ({
     })
     .filter((tag) => tag.length > 0); // Remove empty tags
 
+  // Don't show component if no tags and user has license
+  if (cleanTags.length === 0 && hasLicense) {
+    return null;
+  }
+
   return (
     <div className="bg-[#1C1C1E] border border-gray-800 rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
@@ -411,6 +416,21 @@ const AITags: React.FC<{ tags: string[]; hasLicense?: boolean }> = ({
           <h2 className="text-lg font-semibold text-gray-100">
             Relevant AI Tags
           </h2>
+          {!hasLicense && (
+            <svg
+              className="w-4 h-4 text-gray-500 ml-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+          )}
         </div>
         <button className="text-gray-400 hover:text-gray-300">
           <svg
@@ -433,22 +453,36 @@ const AITags: React.FC<{ tags: string[]; hasLicense?: boolean }> = ({
           !hasLicense ? "blur-sm pointer-events-none" : ""
         } relative`}
       >
-        {cleanTags.map((tag, idx) => (
-          <div
-            key={idx}
-            className="bg-orange-500/20 text-orange-400 text-sm font-semibold px-4 py-2.5 rounded-lg border border-orange-500/30"
-          >
-            {tag}
-          </div>
-        ))}
-        {!hasLicense && (
-          <div className="absolute inset-0 flex items-center justify-center z-10">
-            <div className="bg-black/60 backdrop-blur-sm rounded-lg px-4 py-2 border border-orange-500/50">
-              <p className="text-orange-400 text-sm font-medium">
-                Premium Feature
-              </p>
+        {cleanTags.length > 0 ? (
+          cleanTags.map((tag, idx) => (
+            <div
+              key={idx}
+              className="bg-orange-500/20 text-orange-400 text-sm font-semibold px-4 py-2.5 rounded-lg border border-orange-500/30"
+            >
+              {tag}
             </div>
-          </div>
+          ))
+        ) : !hasLicense ? (
+          // Show placeholder tags when no license (so users can see what they're missing)
+          <>
+            <div className="bg-orange-500/20 text-orange-400 text-sm font-semibold px-4 py-2.5 rounded-lg border border-orange-500/30">
+              User Experience
+            </div>
+            <div className="bg-orange-500/20 text-orange-400 text-sm font-semibold px-4 py-2.5 rounded-lg border border-orange-500/30">
+              Performance
+            </div>
+            <div className="bg-orange-500/20 text-orange-400 text-sm font-semibold px-4 py-2.5 rounded-lg border border-orange-500/30">
+              Design
+            </div>
+            <div className="bg-orange-500/20 text-orange-400 text-sm font-semibold px-4 py-2.5 rounded-lg border border-orange-500/30">
+              Features
+            </div>
+            <div className="bg-orange-500/20 text-orange-400 text-sm font-semibold px-4 py-2.5 rounded-lg border border-orange-500/30">
+              Quality
+            </div>
+          </>
+        ) : (
+          <p className="text-gray-500 text-sm">No tags available yet</p>
         )}
       </div>
     </div>
@@ -1152,10 +1186,14 @@ const Dashboard: React.FC = () => {
           return appsWithAngles;
         });
 
-        if (detailedApp.reviews.length > 0) {
+        if (detailedApp.reviews.length > 0 && hasLicense) {
+          // Only generate tags if user has license
           generateTagsWithAI(detailedApp.name, detailedApp.reviews).then(
             setAiTags
           );
+        } else {
+          // Clear tags if no license
+          setAiTags([]);
         }
       } catch (error) {
         console.error("Error fetching app details:", error);
@@ -1196,9 +1234,16 @@ const Dashboard: React.FC = () => {
       setAnalysisComplete(false);
       setShowAnalysisModal(false);
       setActiveTab("premium"); // Reset to User Analysis tab in analysis modal
-      generateTagsWithAI(selectedApp.name, selectedApp.reviews).then(setAiTags);
+      // Only generate tags if user has license
+      if (hasLicense) {
+        generateTagsWithAI(selectedApp.name, selectedApp.reviews).then(
+          setAiTags
+        );
+      } else {
+        setAiTags([]);
+      }
     }
-  }, [selectedApp]);
+  }, [selectedApp, hasLicense]);
 
   const handleLicenseSubmit = async () => {
     if (isSubmittingLicense) return;
@@ -2156,7 +2201,7 @@ ${analysisResult.marketOpportunities}
                 <button
                   onClick={handleLicenseSubmit}
                   disabled={isSubmittingLicense}
-                  className="flex-1 bg-gray-700 text-white font-semibold px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-orange-600 text-white font-semibold px-4 py-3 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmittingLicense ? (
                     <>
@@ -2203,20 +2248,8 @@ ${analysisResult.marketOpportunities}
                 <button
                   onClick={() => {
                     setShowLicenseModal(false);
-                    // Navigate to landing page and scroll to pricing
-                    if (window.location.pathname === "/") {
-                      // Already on landing page, just scroll
-                      setTimeout(() => {
-                        const pricingElement =
-                          document.getElementById("pricing");
-                        if (pricingElement) {
-                          pricingElement.scrollIntoView({ behavior: "smooth" });
-                        }
-                      }, 100);
-                    } else {
-                      // Navigate to landing page
-                      window.location.href = "/#pricing";
-                    }
+                    // Always navigate to landing page pricing section
+                    window.location.href = "/#pricing";
                   }}
                   className="flex-1 bg-transparent border-2 border-orange-500 text-orange-400 font-semibold px-4 py-3 rounded-lg hover:bg-orange-500/10 transition-colors flex items-center justify-center gap-2"
                 >
@@ -2286,10 +2319,10 @@ ${analysisResult.marketOpportunities}
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                       />
                     </svg>
-                    "How to Beat Them" Competitive Intelligence
+                    Competitive Intelligence and ASO
                   </div>
                   <div className="flex items-center gap-3 text-sm text-gray-300">
                     <svg
@@ -2624,7 +2657,7 @@ ${analysisResult.marketOpportunities}
                 <button
                   onClick={handleLicenseSubmit}
                   disabled={isSubmittingLicense}
-                  className="flex-1 bg-gray-700 text-white font-semibold px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-orange-600 text-white font-semibold px-4 py-3 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmittingLicense ? (
                     <>
@@ -2671,20 +2704,8 @@ ${analysisResult.marketOpportunities}
                 <button
                   onClick={() => {
                     setShowLicenseModal(false);
-                    // Navigate to landing page and scroll to pricing
-                    if (window.location.pathname === "/") {
-                      // Already on landing page, just scroll
-                      setTimeout(() => {
-                        const pricingElement =
-                          document.getElementById("pricing");
-                        if (pricingElement) {
-                          pricingElement.scrollIntoView({ behavior: "smooth" });
-                        }
-                      }, 100);
-                    } else {
-                      // Navigate to landing page
-                      window.location.href = "/#pricing";
-                    }
+                    // Always navigate to landing page pricing section
+                    window.location.href = "/#pricing";
                   }}
                   className="flex-1 bg-transparent border-2 border-orange-500 text-orange-400 font-semibold px-4 py-3 rounded-lg hover:bg-orange-500/10 transition-colors flex items-center justify-center gap-2"
                 >
@@ -2754,10 +2775,10 @@ ${analysisResult.marketOpportunities}
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                       />
                     </svg>
-                    "How to Beat Them" Competitive Intelligence
+                    Competitive Intelligence and ASO
                   </div>
                   <div className="flex items-center gap-3 text-sm text-gray-300">
                     <svg
@@ -2960,7 +2981,7 @@ ${analysisResult.marketOpportunities}
                   </div>
                 )}
 
-                {aiTags.length > 0 && (
+                {(aiTags.length > 0 || !hasLicense) && (
                   <AITags tags={aiTags} hasLicense={hasLicense} />
                 )}
 
@@ -2968,6 +2989,9 @@ ${analysisResult.marketOpportunities}
                   <div className="flex justify-between items-center mb-3">
                     <h2 className="text-lg font-semibold text-white">
                       Reviews ({selectedApp.reviews.length})
+                      <span className="text-sm text-gray-500 font-normal ml-2">
+                        ⓘ
+                      </span>
                     </h2>
                     {selectedApp.reviews.length > 0 && (
                       <div className="flex items-center gap-2">
@@ -3007,6 +3031,46 @@ ${analysisResult.marketOpportunities}
                               ? "Analyzing..."
                               : "Analyze reviews with AI"}
                           </span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (!hasLicense) {
+                              setShowLicenseModal(true);
+                            } else if (
+                              selectedApp &&
+                              analysisResult &&
+                              aiTags.length > 0
+                            ) {
+                              // Export analysis if available
+                              exportAnalysisToCSV(
+                                selectedApp,
+                                analysisResult,
+                                aiTags
+                              );
+                            } else if (selectedApp) {
+                              // Otherwise export reviews
+                              exportReviewsToCSV(
+                                selectedApp,
+                                selectedApp.reviews
+                              );
+                            }
+                          }}
+                          disabled={!hasLicense}
+                          className={`flex items-center space-x-2 font-medium px-3 py-1.5 rounded-lg transition-colors text-sm ${
+                            hasLicense
+                              ? "bg-orange-600/20 border border-orange-500/50 text-orange-400 hover:bg-orange-600/30"
+                              : "bg-gray-700/20 border border-gray-600/50 text-gray-500 cursor-not-allowed"
+                          }`}
+                          title={
+                            !hasLicense
+                              ? "Premium feature - Upgrade to export"
+                              : analysisResult
+                              ? "Export analysis to CSV"
+                              : "Export reviews to CSV"
+                          }
+                        >
+                          <DownloadIcon className="w-4 h-4" />
+                          <span>CSV Export</span>
                         </button>
                       </div>
                     )}
@@ -3071,10 +3135,10 @@ ${analysisResult.marketOpportunities}
                 }}
               >
                 <div
-                  className="bg-[#0F0F0F] border border-gray-900 rounded-2xl w-full max-w-md p-8"
+                  className="bg-[#1C1C1E] border border-gray-800 rounded-2xl w-full max-w-md p-8"
                   onClick={(e) => e.stopPropagation()}
                   style={{
-                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.9)",
+                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)",
                   }}
                 >
                   <button
@@ -3413,24 +3477,7 @@ ${analysisResult.marketOpportunities}
                                 d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                               />
                             </svg>
-                            <button
-                              onClick={() => {
-                                if (
-                                  selectedApp &&
-                                  analysisResult &&
-                                  aiTags.length > 0
-                                ) {
-                                  exportAnalysisToCSV(
-                                    selectedApp,
-                                    analysisResult,
-                                    aiTags
-                                  );
-                                }
-                              }}
-                              className="text-sm text-gray-300 hover:text-white transition-colors"
-                            >
-                              Export Analysis CSV
-                            </button>
+                            CSV Export
                           </div>
                           <div className="flex items-center gap-3 text-sm text-gray-300">
                             <svg
@@ -3446,7 +3493,7 @@ ${analysisResult.marketOpportunities}
                                 d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                               />
                             </svg>
-                            "How to Beat Them" Competitive Intelligence
+                            Competitive Intelligence and ASO
                           </div>
                           <div className="flex items-center gap-3 text-sm text-gray-300">
                             <svg
@@ -3563,7 +3610,7 @@ ${analysisResult.marketOpportunities}
                           : "text-gray-400 border-transparent hover:text-gray-300"
                       }`}
                     >
-                      How to Beat Them
+                      Competitive Intelligence
                     </button>
                   </div>
 
@@ -3647,7 +3694,7 @@ ${analysisResult.marketOpportunities}
                         </div>
                       </div>
                     </div>
-                  ) : /* How to Beat Them Tab */
+                  ) : /* Competitive Intelligence Tab */
                   analysisResult.competitiveIntelligence ? (
                     <div className="flex-1 overflow-y-auto p-6">
                       {/* Compact Grid - All Categories */}

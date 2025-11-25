@@ -17,6 +17,12 @@ import {
 import { handleStripeWebhook } from "./services/stripeService.js";
 import { createCheckoutSession } from "./services/stripeCheckout.js";
 import { createCustomerPortalSession } from "./services/stripeCustomerPortal.js";
+import {
+  analyzeReviewsWithAI,
+  generateTagsWithAI,
+  chatWithAI,
+  analyzeCompetitiveIntelligence,
+} from "./services/geminiService.js";
 
 dotenv.config();
 
@@ -644,6 +650,94 @@ app.post(
 );
 
 /**
+ * AI Analysis endpoint
+ * POST /api/ai/analyze
+ */
+app.post("/api/ai/analyze", strictLimiter, async (req, res) => {
+  try {
+    const { appName, reviews } = req.body;
+    if (!appName || !reviews || !Array.isArray(reviews)) {
+      return res
+        .status(400)
+        .json({ error: "appName and reviews array required" });
+    }
+    const result = await analyzeReviewsWithAI(appName, reviews);
+    res.json(result);
+  } catch (error) {
+    console.error("Error in analyze endpoint:", error);
+    res
+      .status(500)
+      .json({ error: error.message || "Failed to analyze reviews" });
+  }
+});
+
+/**
+ * AI Tags endpoint
+ * POST /api/ai/tags
+ */
+app.post("/api/ai/tags", strictLimiter, async (req, res) => {
+  try {
+    const { appName, reviews } = req.body;
+    if (!appName || !reviews || !Array.isArray(reviews)) {
+      return res
+        .status(400)
+        .json({ error: "appName and reviews array required" });
+    }
+    const tags = await generateTagsWithAI(appName, reviews);
+    res.json({ tags });
+  } catch (error) {
+    console.error("Error in tags endpoint:", error);
+    res.status(500).json({ error: error.message || "Failed to generate tags" });
+  }
+});
+
+/**
+ * AI Chat endpoint
+ * POST /api/ai/chat
+ */
+app.post("/api/ai/chat", strictLimiter, async (req, res) => {
+  try {
+    const { appName, chatHistory, message } = req.body;
+    if (!appName || !message) {
+      return res.status(400).json({ error: "appName and message required" });
+    }
+    const response = await chatWithAI(appName, chatHistory || [], message);
+    res.json({ response });
+  } catch (error) {
+    console.error("Error in chat endpoint:", error);
+    res
+      .status(500)
+      .json({ error: error.message || "Failed to get chat response" });
+  }
+});
+
+/**
+ * Competitive Intelligence endpoint
+ * POST /api/ai/competitive
+ */
+app.post("/api/ai/competitive", strictLimiter, async (req, res) => {
+  try {
+    const { appName, reviews, appMetadata } = req.body;
+    if (!appName || !reviews || !Array.isArray(reviews)) {
+      return res
+        .status(400)
+        .json({ error: "appName and reviews array required" });
+    }
+    const result = await analyzeCompetitiveIntelligence(
+      appName,
+      reviews,
+      appMetadata
+    );
+    res.json(result);
+  } catch (error) {
+    console.error("Error in competitive intelligence endpoint:", error);
+    res.status(500).json({
+      error: error.message || "Failed to analyze competitive intelligence",
+    });
+  }
+});
+
+/**
  * Health check endpoint
  * GET /api/health
  */
@@ -654,6 +748,7 @@ app.get("/api/health", (req, res) => {
     serpapi: SERPAPI_API_KEY ? "configured" : "not configured",
     supabase: process.env.SUPABASE_URL ? "configured" : "not configured",
     stripe: process.env.STRIPE_WEBHOOK_SECRET ? "configured" : "not configured",
+    gemini: process.env.GEMINI_API_KEY ? "configured" : "not configured",
   });
 });
 

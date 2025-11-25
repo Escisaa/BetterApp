@@ -471,7 +471,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                           clipRule="evenodd"
                         />
                       </svg>
-                      "How to Beat Them" Competitive Intelligence
+                      Competitive Intelligence and ASO
                     </li>
                     <li
                       className={`flex items-center ${
