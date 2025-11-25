@@ -29,8 +29,49 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3002;
 
+// Trust proxy (required for Render and rate limiting to work correctly)
+app.set("trust proxy", true);
+
 // Middleware
 app.use(cors());
+
+// Stripe webhook MUST be before express.json() to receive raw body for signature verification
+app.post(
+  "/api/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    const sig = req.headers["stripe-signature"];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      return res.status(400).json({ error: "Webhook secret not configured" });
+    }
+
+    try {
+      // Verify webhook signature
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+      const event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        webhookSecret
+      );
+
+      const result = await handleStripeWebhook(event);
+
+      if (result.success) {
+        res.json({ received: true });
+      } else {
+        res.status(400).json({ error: result.error });
+      }
+    } catch (error) {
+      console.error("Webhook error:", error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+// Now apply JSON parsing for all other routes
 app.use(express.json());
 
 // Rate limiting to prevent abuse - Production-ready limits
@@ -629,44 +670,7 @@ app.post("/api/stripe/portal", strictLimiter, async (req, res) => {
   }
 });
 
-/**
- * Stripe webhook endpoint
- * POST /api/stripe/webhook
- */
-app.post(
-  "/api/stripe/webhook",
-  express.raw({ type: "application/json" }),
-  async (req, res) => {
-    const sig = req.headers["stripe-signature"];
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-    if (!webhookSecret) {
-      return res.status(400).json({ error: "Webhook secret not configured" });
-    }
-
-    try {
-      // Verify webhook signature
-      const Stripe = (await import("stripe")).default;
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-      const event = stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        webhookSecret
-      );
-
-      const result = await handleStripeWebhook(event);
-
-      if (result.success) {
-        res.json({ received: true });
-      } else {
-        res.status(400).json({ error: result.error });
-      }
-    } catch (error) {
-      console.error("Webhook error:", error);
-      res.status(400).json({ error: error.message });
-    }
-  }
-);
+// Webhook route moved above - it's now before express.json() middleware
 
 /**
  * AI Analysis endpoint
