@@ -308,13 +308,68 @@ export async function handleStripeWebhook(event) {
         return { success: false, error: "Database not configured" };
       }
 
-      // If subscription just became active, create license if it doesn't exist
+      // If subscription just became active, create subscription and license if they don't exist
       if (subscription.status === "active") {
-        const existingSub = await supabase
+        let existingSub = await supabase
           .from("subscriptions")
           .select("id, licenses(*)")
           .eq("stripe_subscription_id", subscription.id)
           .single();
+
+        // If subscription doesn't exist, create it first
+        if (!existingSub.data || existingSub.error) {
+          console.log(`   Subscription not found in DB, creating it...`);
+
+          // Get customer email
+          let customerEmail = subscription.customer_email;
+          if (!customerEmail && subscription.customer) {
+            try {
+              const Stripe = await getStripe();
+              const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+              const customer = await stripe.customers.retrieve(
+                subscription.customer
+              );
+              if (customer && !customer.deleted && customer.email) {
+                customerEmail = customer.email;
+              }
+            } catch (e) {
+              console.warn("Could not fetch customer email:", e.message);
+            }
+          }
+
+          // Create subscription record
+          const periodStart = subscription.current_period_start
+            ? new Date(subscription.current_period_start * 1000).toISOString()
+            : new Date().toISOString();
+          const periodEnd = subscription.current_period_end
+            ? new Date(subscription.current_period_end * 1000).toISOString()
+            : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+          const { data: newSubData, error: subError } = await supabase
+            .from("subscriptions")
+            .insert({
+              stripe_customer_id: subscription.customer,
+              stripe_subscription_id: subscription.id,
+              plan:
+                subscription.items?.data?.[0]?.price?.recurring?.interval ===
+                "year"
+                  ? "yearly"
+                  : "monthly",
+              status: subscription.status || "active",
+              current_period_start: periodStart,
+              current_period_end: periodEnd,
+              email: customerEmail || "",
+            })
+            .select()
+            .single();
+
+          if (subError) {
+            console.error("❌ Error creating subscription:", subError);
+            return { success: false, error: subError.message };
+          }
+
+          existingSub = { data: newSubData, error: null };
+        }
 
         // If subscription exists but no license, create one
         if (
@@ -415,19 +470,23 @@ export async function handleStripeWebhook(event) {
         return { success: false, error: error.message };
       }
 
-      // Update license expiry
-      const expiresAt = subscription.current_period_end
-        ? new Date(subscription.current_period_end * 1000).toISOString()
-        : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(); // Default to 1 year from now
+      // Update license expiry (only if subscription exists)
       const subResult = await supabase
         .from("subscriptions")
         .select("id")
         .eq("stripe_subscription_id", subscription.id)
         .single();
-      await supabase
-        .from("licenses")
-        .update({ expires_at: expiresAt })
-        .eq("subscription_id", subResult.data.id);
+
+      if (subResult.data && subResult.data.id) {
+        const expiresAt = subscription.current_period_end
+          ? new Date(subscription.current_period_end * 1000).toISOString()
+          : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+        await supabase
+          .from("licenses")
+          .update({ expires_at: expiresAt })
+          .eq("subscription_id", subResult.data.id);
+      }
 
       return { success: true };
     }
