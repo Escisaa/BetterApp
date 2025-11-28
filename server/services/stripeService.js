@@ -111,7 +111,7 @@ export async function handleStripeWebhook(event) {
       // Verify Supabase connection
       if (!supabase) {
         console.error(
-          "❌ Supabase client not initialized - check SUPABASE_URL and SUPABASE_ANON_KEY"
+          "❌ Supabase client not initialized - check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"
         );
         return { success: false, error: "Database not configured" };
       }
@@ -151,7 +151,10 @@ export async function handleStripeWebhook(event) {
           subError.message?.includes("JWT")
         ) {
           console.error(
-            "   ⚠️  SUPABASE_ANON_KEY is invalid or missing in Render environment variables!"
+            "   ⚠️  SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY) is invalid!"
+          );
+          console.error(
+            "   💡 Get your service_role key from Supabase Dashboard → Settings → API"
           );
         }
         return { success: false, error: subError.message };
@@ -184,7 +187,10 @@ export async function handleStripeWebhook(event) {
           licenseError.message?.includes("JWT")
         ) {
           console.error(
-            "   ⚠️  SUPABASE_ANON_KEY is invalid or missing in Render environment variables!"
+            "   ⚠️  SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY) is invalid!"
+          );
+          console.error(
+            "   💡 Get your service_role key from Supabase Dashboard → Settings → API"
           );
         }
         return { success: false, error: licenseError.message };
@@ -297,7 +303,7 @@ export async function handleStripeWebhook(event) {
       // Verify Supabase connection
       if (!supabase) {
         console.error(
-          "❌ Supabase client not initialized - check SUPABASE_URL and SUPABASE_ANON_KEY"
+          "❌ Supabase client not initialized - check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"
         );
         return { success: false, error: "Database not configured" };
       }
@@ -400,7 +406,10 @@ export async function handleStripeWebhook(event) {
           error.message?.includes("JWT")
         ) {
           console.error(
-            "   ⚠️  SUPABASE_ANON_KEY is invalid or missing in Render environment variables!"
+            "   ⚠️  SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY) is invalid!"
+          );
+          console.error(
+            "   💡 Get your service_role key from Supabase Dashboard → Settings → API"
           );
         }
         return { success: false, error: error.message };
