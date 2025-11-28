@@ -83,6 +83,9 @@ const iconLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful requests
+  validate: {
+    trustProxy: false, // Disable validation warning - we trust Render's proxy
+  },
 });
 
 // General API routes (search, etc.) - increased for production
@@ -92,6 +95,9 @@ const generalLimiter = rateLimit({
   message: "Too many requests. Please wait a moment and try again.",
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    trustProxy: false, // Disable validation warning - we trust Render's proxy
+  },
 });
 
 // Strict limiter for premium/AI features
@@ -101,6 +107,9 @@ const strictLimiter = rateLimit({
   message: "Too many requests. Please wait a moment and try again.",
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    trustProxy: false, // Disable validation warning - we trust Render's proxy
+  },
 });
 
 // Email limiter - keep strict to prevent spam
@@ -110,6 +119,9 @@ const emailLimiter = rateLimit({
   message: "Too many email requests, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    trustProxy: false, // Disable validation warning - we trust Render's proxy
+  },
 });
 
 // Apply general rate limiting to all API routes (except icon which has its own limiter)

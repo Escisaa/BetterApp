@@ -43,6 +43,8 @@ function generateLicenseKey() {
  */
 export async function handleStripeWebhook(event) {
   try {
+    console.log(`📥 Received Stripe webhook event: ${event.type}`);
+
     // Handle checkout.session.completed (happens first, has customer email)
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
@@ -50,7 +52,7 @@ export async function handleStripeWebhook(event) {
       // Only process if it's a subscription
       if (session.mode === "subscription" && session.customer_email) {
         console.log(
-          `Checkout completed for ${session.customer_email}, waiting for subscription.created event...`
+          `✅ Checkout completed for ${session.customer_email}, waiting for subscription.created event...`
         );
         // The subscription.created event will handle the license creation
         return {
@@ -62,8 +64,24 @@ export async function handleStripeWebhook(event) {
 
     if (event.type === "customer.subscription.created") {
       const subscription = event.data.object;
+      console.log(
+        `📦 Processing subscription.created for subscription: ${subscription.id}`
+      );
+      console.log(`   Customer: ${subscription.customer}`);
+      console.log(`   Status: ${subscription.status}`);
+      console.log(`   Period start: ${subscription.current_period_start}`);
+      console.log(`   Period end: ${subscription.current_period_end}`);
 
       const supabase = getSupabaseClient();
+
+      // Validate and convert dates safely
+      const periodStart = subscription.current_period_start
+        ? new Date(subscription.current_period_start * 1000).toISOString()
+        : new Date().toISOString();
+      const periodEnd = subscription.current_period_end
+        ? new Date(subscription.current_period_end * 1000).toISOString()
+        : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(); // Default to 1 year from now
+
       // Create subscription record
       const { data: subData, error: subError } = await supabase
         .from("subscriptions")
@@ -71,16 +89,12 @@ export async function handleStripeWebhook(event) {
           stripe_customer_id: subscription.customer,
           stripe_subscription_id: subscription.id,
           plan:
-            subscription.items.data[0].price.recurring.interval === "year"
+            subscription.items?.data?.[0]?.price?.recurring?.interval === "year"
               ? "yearly"
               : "monthly",
-          status: subscription.status,
-          current_period_start: new Date(
-            subscription.current_period_start * 1000
-          ).toISOString(),
-          current_period_end: new Date(
-            subscription.current_period_end * 1000
-          ).toISOString(),
+          status: subscription.status || "active",
+          current_period_start: periodStart,
+          current_period_end: periodEnd,
           email: subscription.customer_email || "",
         })
         .select()
@@ -93,9 +107,9 @@ export async function handleStripeWebhook(event) {
 
       // Generate license key
       const licenseKey = generateLicenseKey();
-      const expiresAt = new Date(
-        subscription.current_period_end * 1000
-      ).toISOString();
+      const expiresAt = subscription.current_period_end
+        ? new Date(subscription.current_period_end * 1000).toISOString()
+        : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(); // Default to 1 year from now
 
       // Create license
       const { data: licenseData, error: licenseError } = await supabase
@@ -196,18 +210,28 @@ export async function handleStripeWebhook(event) {
       const subscription = event.data.object;
 
       const supabase = getSupabaseClient();
+
+      // Validate and convert dates safely
+      const updateData = {
+        status: subscription.status,
+      };
+
+      if (subscription.current_period_start) {
+        updateData.current_period_start = new Date(
+          subscription.current_period_start * 1000
+        ).toISOString();
+      }
+
+      if (subscription.current_period_end) {
+        updateData.current_period_end = new Date(
+          subscription.current_period_end * 1000
+        ).toISOString();
+      }
+
       // Update subscription
       const { error } = await supabase
         .from("subscriptions")
-        .update({
-          status: subscription.status,
-          current_period_start: new Date(
-            subscription.current_period_start * 1000
-          ).toISOString(),
-          current_period_end: new Date(
-            subscription.current_period_end * 1000
-          ).toISOString(),
-        })
+        .update(updateData)
         .eq("stripe_subscription_id", subscription.id);
 
       if (error) {
@@ -216,9 +240,9 @@ export async function handleStripeWebhook(event) {
       }
 
       // Update license expiry
-      const expiresAt = new Date(
-        subscription.current_period_end * 1000
-      ).toISOString();
+      const expiresAt = subscription.current_period_end
+        ? new Date(subscription.current_period_end * 1000).toISOString()
+        : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(); // Default to 1 year from now
       const subResult = await supabase
         .from("subscriptions")
         .select("id")
