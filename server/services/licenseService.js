@@ -6,10 +6,23 @@ let supabase = null;
 export function getSupabaseClient() {
   if (!supabase) {
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    // Use service_role key for server-side operations (bypasses RLS)
+    // Fall back to anon key if service_role not available
+    const supabaseKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error("Missing Supabase configuration");
+      const missing = [];
+      if (!supabaseUrl) missing.push("SUPABASE_URL");
+      if (
+        !process.env.SUPABASE_SERVICE_ROLE_KEY &&
+        !process.env.SUPABASE_ANON_KEY
+      ) {
+        missing.push(
+          "SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY as fallback)"
+        );
+      }
+      throw new Error(`Missing Supabase configuration: ${missing.join(", ")}`);
     }
 
     supabase = createClient(supabaseUrl, supabaseKey);

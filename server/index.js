@@ -869,12 +869,27 @@ app.listen(PORT, () => {
       `⚠️  STRIPE_WEBHOOK_SECRET not set - Stripe webhooks will fail!`
     );
   }
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+  if (!process.env.SUPABASE_URL) {
     console.log(
-      `❌ SUPABASE_URL or SUPABASE_ANON_KEY not set - subscriptions and licenses will fail!`
+      `❌ SUPABASE_URL not set - subscriptions and licenses will fail!`
     );
-    console.log(`   Add these in Render Environment variables`);
+  } else if (
+    !process.env.SUPABASE_SERVICE_ROLE_KEY &&
+    !process.env.SUPABASE_ANON_KEY
+  ) {
+    console.log(
+      `❌ SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY) not set - subscriptions and licenses will fail!`
+    );
+    console.log(
+      `   💡 Use SUPABASE_SERVICE_ROLE_KEY for server operations (recommended)`
+    );
   } else {
-    console.log(`✅ Supabase configured`);
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.log(`✅ Supabase configured with service_role key (recommended)`);
+    } else {
+      console.log(
+        `⚠️  Supabase configured with anon key (consider using service_role key)`
+      );
+    }
   }
 });
