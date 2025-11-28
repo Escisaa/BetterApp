@@ -869,4 +869,12 @@ app.listen(PORT, () => {
       `⚠️  STRIPE_WEBHOOK_SECRET not set - Stripe webhooks will fail!`
     );
   }
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+    console.log(
+      `❌ SUPABASE_URL or SUPABASE_ANON_KEY not set - subscriptions and licenses will fail!`
+    );
+    console.log(`   Add these in Render Environment variables`);
+  } else {
+    console.log(`✅ Supabase configured`);
+  }
 });

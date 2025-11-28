@@ -699,92 +699,130 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
       <Footer isDark={isDark} />
 
-      {/* Email Capture Modal (Optional) */}
+      {/* Email Capture Modal (Optional) - Improved Design */}
       {showEmailModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div
-            className={`${isDark ? "bg-[#1C1C1E]" : "bg-white"} border ${
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`${
+              isDark ? "bg-[#1C1C1E]" : "bg-white"
+            } border ${
               isDark ? "border-gray-800" : "border-gray-200"
-            } rounded-2xl w-full max-w-md p-8 shadow-2xl`}
+            } rounded-2xl w-full max-w-md shadow-2xl overflow-hidden`}
           >
-            <h2
-              className={`text-2xl font-bold mb-2 ${
-                isDark ? "text-white" : "text-gray-900"
-              }`}
+            {/* Header */}
+            <div
+              className={`${
+                isDark ? "bg-gradient-to-r from-orange-600 to-orange-500" : "bg-gradient-to-r from-orange-500 to-orange-400"
+              } p-6 text-white`}
             >
-              Get Started
-            </h2>
-            <p
-              className={`text-sm mb-6 ${
-                isDark ? "text-gray-400" : "text-gray-600"
-              }`}
-            >
-              Enter your email to get updates and track your usage (optional)
-            </p>
-            <input
-              type="email"
-              value={userEmail}
-              onChange={(e) => setUserEmail(e.target.value)}
-              placeholder="your@email.com"
-              className={`w-full px-4 py-3 rounded-lg border ${
-                isDark
-                  ? "bg-gray-900 border-gray-700 text-white placeholder-gray-500"
-                  : "bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400"
-              } focus:outline-none focus:ring-2 focus:ring-orange-500 mb-4`}
-              onKeyPress={(e) => {
-                if (e.key === "Enter" && userEmail.trim()) {
-                  handleEmailSubmit();
-                }
-              }}
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={handleEmailSubmit}
-                disabled={isSubmittingEmail || !userEmail.trim()}
-                className="flex-1 bg-orange-600 text-white font-semibold px-4 py-3 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isSubmittingEmail ? (
-                  <>
-                    <svg
-                      className="animate-spin h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    Saving...
-                  </>
-                ) : (
-                  "Continue"
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  setShowEmailModal(false);
-                  handleNavigateToDashboard();
-                }}
-                className={`px-4 py-3 rounded-lg border font-medium transition-colors ${
-                  isDark
-                    ? "border-gray-700 text-gray-300 hover:bg-gray-800"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold mb-1">Welcome to BetterApp</h2>
+                  <p className="text-orange-100 text-sm">
+                    Get started with your email (optional)
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowEmailModal(false);
+                    handleNavigateToDashboard();
+                  }}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <p
+                className={`text-sm mb-4 ${
+                  isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Skip
-              </button>
+                Enter your email to receive updates and track your usage. You can skip this step.
+              </p>
+              <input
+                type="email"
+                value={userEmail}
+                onChange={(e) => setUserEmail(e.target.value)}
+                placeholder="your@email.com"
+                autoFocus
+                className={`w-full px-4 py-3 rounded-lg border ${
+                  isDark
+                    ? "bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:border-orange-500"
+                    : "bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-orange-500"
+                } focus:outline-none focus:ring-2 focus:ring-orange-500 mb-4 transition-colors`}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter" && userEmail.trim()) {
+                    handleEmailSubmit();
+                  }
+                }}
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={handleEmailSubmit}
+                  disabled={isSubmittingEmail || !userEmail.trim()}
+                  className="flex-1 bg-orange-600 text-white font-semibold px-4 py-3 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
+                >
+                  {isSubmittingEmail ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    "Continue"
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowEmailModal(false);
+                    handleNavigateToDashboard();
+                  }}
+                  className={`px-4 py-3 rounded-lg border font-medium transition-colors ${
+                    isDark
+                      ? "border-gray-700 text-gray-300 hover:bg-gray-800 hover:border-gray-600"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                  }`}
+                >
+                  Skip
+                </button>
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
 

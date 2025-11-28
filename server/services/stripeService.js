@@ -72,7 +72,30 @@ export async function handleStripeWebhook(event) {
       console.log(`   Period start: ${subscription.current_period_start}`);
       console.log(`   Period end: ${subscription.current_period_end}`);
 
+      // CRITICAL: Only process if subscription is active or trialing
+      // Incomplete subscriptions haven't been paid yet - wait for payment_intent.succeeded
+      if (
+        subscription.status === "incomplete" ||
+        subscription.status === "incomplete_expired"
+      ) {
+        console.log(
+          `⏳ Subscription ${subscription.id} is incomplete - waiting for payment to complete`
+        );
+        return {
+          success: true,
+          message: "Subscription incomplete, waiting for payment",
+        };
+      }
+
       const supabase = getSupabaseClient();
+
+      // Verify Supabase connection
+      if (!supabase) {
+        console.error(
+          "❌ Supabase client not initialized - check SUPABASE_URL and SUPABASE_ANON_KEY"
+        );
+        return { success: false, error: "Database not configured" };
+      }
 
       // Validate and convert dates safely
       const periodStart = subscription.current_period_start
@@ -101,7 +124,17 @@ export async function handleStripeWebhook(event) {
         .single();
 
       if (subError) {
-        console.error("Error creating subscription:", subError);
+        console.error("❌ Error creating subscription:", subError);
+        console.error("   Full error:", JSON.stringify(subError, null, 2));
+        // Check if it's an API key issue
+        if (
+          subError.message?.includes("Invalid API key") ||
+          subError.message?.includes("JWT")
+        ) {
+          console.error(
+            "   ⚠️  SUPABASE_ANON_KEY is invalid or missing in Render environment variables!"
+          );
+        }
         return { success: false, error: subError.message };
       }
 
@@ -124,7 +157,17 @@ export async function handleStripeWebhook(event) {
         .single();
 
       if (licenseError) {
-        console.error("Error creating license:", licenseError);
+        console.error("❌ Error creating license:", licenseError);
+        console.error("   Full error:", JSON.stringify(licenseError, null, 2));
+        // Check if it's an API key issue
+        if (
+          licenseError.message?.includes("Invalid API key") ||
+          licenseError.message?.includes("JWT")
+        ) {
+          console.error(
+            "   ⚠️  SUPABASE_ANON_KEY is invalid or missing in Render environment variables!"
+          );
+        }
         return { success: false, error: licenseError.message };
       }
 
@@ -225,8 +268,87 @@ export async function handleStripeWebhook(event) {
 
     if (event.type === "customer.subscription.updated") {
       const subscription = event.data.object;
+      console.log(
+        `📝 Processing subscription.updated for subscription: ${subscription.id}`
+      );
+      console.log(`   Status: ${subscription.status}`);
 
       const supabase = getSupabaseClient();
+
+      // Verify Supabase connection
+      if (!supabase) {
+        console.error(
+          "❌ Supabase client not initialized - check SUPABASE_URL and SUPABASE_ANON_KEY"
+        );
+        return { success: false, error: "Database not configured" };
+      }
+
+      // If subscription just became active, create license if it doesn't exist
+      if (subscription.status === "active") {
+        const existingSub = await supabase
+          .from("subscriptions")
+          .select("id, licenses(*)")
+          .eq("stripe_subscription_id", subscription.id)
+          .single();
+
+        // If subscription exists but no license, create one
+        if (
+          existingSub.data &&
+          (!existingSub.data.licenses || existingSub.data.licenses.length === 0)
+        ) {
+          console.log(
+            `   Creating license for newly activated subscription...`
+          );
+          const licenseKey = generateLicenseKey();
+          const expiresAt = subscription.current_period_end
+            ? new Date(subscription.current_period_end * 1000).toISOString()
+            : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+          const { data: licenseData, error: licenseError } = await supabase
+            .from("licenses")
+            .insert({
+              license_key: licenseKey,
+              subscription_id: existingSub.data.id,
+              expires_at: expiresAt,
+              is_active: true,
+            })
+            .select()
+            .single();
+
+          if (!licenseError && licenseData) {
+            // Send email
+            let customerEmail = subscription.customer_email;
+            if (!customerEmail && subscription.customer) {
+              try {
+                const Stripe = await getStripe();
+                const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+                const customer = await stripe.customers.retrieve(
+                  subscription.customer
+                );
+                if (customer && !customer.deleted && customer.email) {
+                  customerEmail = customer.email;
+                }
+              } catch (e) {
+                console.warn("Could not fetch customer email:", e.message);
+              }
+            }
+
+            if (customerEmail) {
+              const { sendLicenseKey } = await import("./emailService.js");
+              const emailResult = await sendLicenseKey(
+                customerEmail,
+                licenseKey,
+                existingSub.data.plan || "yearly"
+              );
+              if (emailResult.success) {
+                console.log(`✅ License email sent to ${customerEmail}`);
+              } else {
+                console.error(`❌ Failed to send email: ${emailResult.error}`);
+              }
+            }
+          }
+        }
+      }
 
       // Validate and convert dates safely
       const updateData = {
@@ -252,7 +374,16 @@ export async function handleStripeWebhook(event) {
         .eq("stripe_subscription_id", subscription.id);
 
       if (error) {
-        console.error("Error updating subscription:", error);
+        console.error("❌ Error updating subscription:", error);
+        console.error("   Full error:", JSON.stringify(error, null, 2));
+        if (
+          error.message?.includes("Invalid API key") ||
+          error.message?.includes("JWT")
+        ) {
+          console.error(
+            "   ⚠️  SUPABASE_ANON_KEY is invalid or missing in Render environment variables!"
+          );
+        }
         return { success: false, error: error.message };
       }
 
