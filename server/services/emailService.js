@@ -50,7 +50,7 @@ export async function sendLicenseKey(email, licenseKey, plan = "yearly") {
 
     const { data, error } = await resend.emails.send({
       from: `BetterApp <${emailFrom}>`,
-      to: email,
+      to: [email], // Resend requires array format
       subject: "Your BetterApp License Key",
       html: `
         <!DOCTYPE html>

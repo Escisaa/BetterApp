@@ -16,6 +16,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
   const [isDark, setIsDark] = useState(true);
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   useEffect(() => {
     // Apply theme to document
@@ -25,6 +26,18 @@ const LandingPage: React.FC<LandingPageProps> = ({
       document.documentElement.classList.remove("dark");
     }
   }, [isDark]);
+
+  // Check for success parameter from Stripe redirect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("success") === "true") {
+      setShowSuccessToast(true);
+      // Remove success param from URL
+      window.history.replaceState({}, "", window.location.pathname);
+      // Auto-hide toast after 8 seconds
+      setTimeout(() => setShowSuccessToast(false), 8000);
+    }
+  }, []);
 
   const fadeInUp = {
     initial: { opacity: 0, y: 30 },
@@ -644,6 +657,56 @@ const LandingPage: React.FC<LandingPageProps> = ({
       </main>
 
       <Footer isDark={isDark} />
+
+      {/* Success Toast Notification */}
+      {showSuccessToast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5">
+          <div className="bg-green-600 text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-4 max-w-md border border-green-500">
+            <div className="flex-shrink-0">
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg mb-1">
+                Payment Successful! 🎉
+              </h3>
+              <p className="text-sm text-green-100">
+                Your license key has been sent to your email. Please check your
+                inbox (and spam folder) to activate your premium account.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowSuccessToast(false)}
+              className="flex-shrink-0 text-green-100 hover:text-white transition-colors"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
