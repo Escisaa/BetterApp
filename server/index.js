@@ -74,6 +74,46 @@ app.post(
 // Now apply JSON parsing for all other routes
 app.use(express.json());
 
+/**
+ * Track user email (optional signup for analytics)
+ * POST /api/users/track
+ * Body: { email: string }
+ */
+app.post("/api/users/track", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email || !email.includes("@")) {
+      return res.status(400).json({ error: "Valid email required" });
+    }
+
+    const supabase = getSupabaseClient();
+
+    // Insert or update user email (upsert)
+    const { error } = await supabase.from("users").upsert(
+      {
+        email: email.trim().toLowerCase(),
+        last_seen_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "email",
+      }
+    );
+
+    if (error) {
+      console.error("Error tracking user email:", error);
+      // Don't fail - this is optional tracking
+      return res.json({ success: true, message: "Email tracked" });
+    }
+
+    res.json({ success: true, message: "Email tracked" });
+  } catch (error) {
+    console.error("Error in user tracking:", error);
+    // Don't fail - this is optional
+    res.json({ success: true, message: "Email tracked" });
+  }
+});
+
 // Rate limiting to prevent abuse - Production-ready limits
 // Icon fetches are non-critical, so they get very lenient limits
 const iconLimiter = rateLimit({

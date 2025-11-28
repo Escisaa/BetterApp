@@ -161,6 +161,23 @@ export async function handleStripeWebhook(event) {
         }
       }
 
+      // Link subscription to user email if they signed up
+      if (customerEmail) {
+        try {
+          await supabase
+            .from("users")
+            .update({
+              subscription_id: subData.id,
+              has_license: true,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("email", customerEmail.toLowerCase());
+        } catch (userError) {
+          // Ignore - user might not exist yet
+          console.log("User not found for email linking (optional)");
+        }
+      }
+
       // Send license key to customer email
       if (customerEmail) {
         console.log(
