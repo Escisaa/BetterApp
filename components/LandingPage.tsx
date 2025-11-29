@@ -705,21 +705,23 @@ const LandingPage: React.FC<LandingPageProps> = ({
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`${
-              isDark ? "bg-[#1C1C1E]" : "bg-white"
-            } border ${
+            className={`${isDark ? "bg-[#1C1C1E]" : "bg-white"} border ${
               isDark ? "border-gray-800" : "border-gray-200"
             } rounded-2xl w-full max-w-md shadow-2xl overflow-hidden`}
           >
             {/* Header */}
             <div
               className={`${
-                isDark ? "bg-gradient-to-r from-orange-600 to-orange-500" : "bg-gradient-to-r from-orange-500 to-orange-400"
+                isDark
+                  ? "bg-gradient-to-r from-orange-600 to-orange-500"
+                  : "bg-gradient-to-r from-orange-500 to-orange-400"
               } p-6 text-white`}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold mb-1">Welcome to BetterApp</h2>
+                  <h2 className="text-2xl font-bold mb-1">
+                    Welcome to BetterApp
+                  </h2>
                   <p className="text-orange-100 text-sm">
                     Get started with your email (optional)
                   </p>
@@ -755,7 +757,8 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Enter your email to receive updates and track your usage. You can skip this step.
+                Enter your email to receive updates and track your usage. You
+                can skip this step.
               </p>
               <input
                 type="email"
