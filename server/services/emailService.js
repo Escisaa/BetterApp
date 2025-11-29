@@ -31,15 +31,12 @@ export async function sendLicenseKey(email, licenseKey, plan = "yearly") {
     }
 
     // Validate email configuration
-    const emailFrom = process.env.EMAIL_FROM;
+    // Use Vercel domain for now (can be changed later to custom domain)
+    let emailFrom = process.env.EMAIL_FROM;
     if (!emailFrom || !emailFrom.includes("@")) {
-      console.error(
-        "EMAIL_FROM must be a valid email address (e.g., noreply@yourdomain.com)"
-      );
-      return {
-        success: false,
-        error: "Email sender address not configured properly",
-      };
+      // Default to Vercel domain for now
+      emailFrom = "noreply@better-app-git-main-escisaas-projects.vercel.app";
+      console.warn(`EMAIL_FROM not set, using Vercel domain: ${emailFrom}`);
     }
 
     const planText = plan === "yearly" ? "Yearly" : "Monthly";

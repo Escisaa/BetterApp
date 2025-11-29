@@ -261,13 +261,13 @@ export async function handleStripeWebhook(event) {
             `❌ FAILED to send license email to ${customerEmail}:`,
             emailResult.error
           );
-          // CRITICAL: Always log the license key so it can be manually sent
-          console.log(`\n⚠️  ===========================================`);
-          console.log(`⚠️  LICENSE KEY GENERATED BUT EMAIL FAILED!`);
-          console.log(`⚠️  Email: ${customerEmail}`);
-          console.log(`⚠️  License Key: ${licenseKey}`);
-          console.log(`⚠️  Subscription ID: ${subscription.id}`);
-          console.log(`⚠️  ===========================================\n`);
+          // CRITICAL: Always log the license key prominently
+          console.error(`\n🚨 ===========================================`);
+          console.error(`🚨 LICENSE KEY FOR MANUAL SENDING:`);
+          console.error(`🚨 Email: ${customerEmail}`);
+          console.error(`🚨 License Key: ${licenseKey}`);
+          console.error(`🚨 Subscription: ${subscription.id}`);
+          console.error(`🚨 ===========================================\n`);
           // Don't fail the webhook - license is still created
         } else {
           console.log(
@@ -424,6 +424,9 @@ export async function handleStripeWebhook(event) {
                 console.log(`✅ License email sent to ${customerEmail}`);
               } else {
                 console.error(`❌ Failed to send email: ${emailResult.error}`);
+                console.error(`🚨 LICENSE KEY FOR MANUAL SENDING:`);
+                console.error(`🚨 Email: ${customerEmail}`);
+                console.error(`🚨 License Key: ${licenseKey}`);
               }
             }
           }
