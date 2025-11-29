@@ -10,9 +10,9 @@ const SUPABASE_URL =
 
 const SUPABASE_ANON_KEY =
   import.meta.env?.VITE_SUPABASE_ANON_KEY ||
-  // Fallback: Copy the value from your SUPABASE_ANON_KEY in Vercel
-  // and add it as VITE_SUPABASE_ANON_KEY
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6aWtuen14ZnJiaGZwaWxqZXRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMjUxMDksImV4cCI6MjA3NDAwMTEwOX0.6yo-RHL7QDu-ZUK0uba7HWV7yTIr6sJVgafMRS7EdTU";
+  // Fallback: This should match your SUPABASE_ANON_KEY from .env
+  // Update this if your key changes
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6aWtuenl4ZnJiaGZwaWxqZXRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMjUxMDksImV4cCI6MjA3ODgwMTEwOX0.rhTi6odfYjIFV6hJaHxHUYnb_reMNFvIcEU4dkKG7AQ";
 
 // Validate configuration
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
