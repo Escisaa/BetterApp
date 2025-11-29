@@ -25,17 +25,20 @@ const getSupabaseUrl = (): string => {
 };
 
 const getSupabaseAnonKey = (): string => {
-  // Check for explicit key in env
+  // MUST be set in Vercel environment variables
   const envKey = import.meta.env?.VITE_SUPABASE_ANON_KEY as string;
-  if (envKey) {
-    return envKey;
+
+  if (!envKey) {
+    console.error(
+      "❌ VITE_SUPABASE_ANON_KEY not set in Vercel environment variables"
+    );
+    console.error(
+      "   Add it in Vercel → Project Settings → Environment Variables"
+    );
+    throw new Error("VITE_SUPABASE_ANON_KEY environment variable is required");
   }
 
-  // Production/Development: use anon key
-  return (
-    import.meta.env?.VITE_SUPABASE_ANON_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6aWtuen14ZnJiaGZwaWxqZXRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMjUxMDksImV4cCI6MjA3NDAwMTEwOX0.6yo-RHL7QDu-ZUK0uba7HWV7yTIr6sJVgafMRS7EdTU"
-  );
+  return envKey;
 };
 
 export const supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey());
