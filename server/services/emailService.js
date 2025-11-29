@@ -144,6 +144,24 @@ Happy analyzing!
 
     if (error) {
       console.error("Resend API error:", error);
+      // Check for domain verification error
+      if (
+        error.message?.includes("verify a domain") ||
+        error.message?.includes("testing emails")
+      ) {
+        console.error("⚠️  EMAIL DOMAIN NOT VERIFIED IN RESEND");
+        console.error(
+          "   To send emails to all users, verify your domain at: https://resend.com/domains"
+        );
+        console.error(
+          "   For now, emails can only be sent to: escisaaq.nord1@gmail.com"
+        );
+        return {
+          success: false,
+          error:
+            "Email domain not verified. Please verify your domain in Resend to send emails to all users.",
+        };
+      }
       return { success: false, error: error.message || "Failed to send email" };
     }
 
