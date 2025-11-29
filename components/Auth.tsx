@@ -25,14 +25,27 @@ const Auth: React.FC<AuthProps> = ({ isDark = true, onAuthSuccess }) => {
     try {
       if (isSignUp) {
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
+          email: email.trim().toLowerCase(),
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/dashboard`,
           },
         });
 
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          console.error("Sign up error:", signUpError);
+          // Provide more helpful error messages
+          if (signUpError.message.includes("Invalid API key")) {
+            setError(
+              "Configuration error: Invalid Supabase API key. Please contact support."
+            );
+          } else if (signUpError.message.includes("Email rate limit")) {
+            setError("Too many sign-up attempts. Please try again later.");
+          } else {
+            setError(signUpError.message || "Failed to create account");
+          }
+          return;
+        }
 
         if (data.user && !data.session) {
           setMessage(
@@ -48,11 +61,26 @@ const Auth: React.FC<AuthProps> = ({ isDark = true, onAuthSuccess }) => {
       } else {
         const { data, error: signInError } =
           await supabase.auth.signInWithPassword({
-            email,
+            email: email.trim().toLowerCase(),
             password,
           });
 
-        if (signInError) throw signInError;
+        if (signInError) {
+          console.error("Sign in error:", signInError);
+          // Provide more helpful error messages
+          if (signInError.message.includes("Invalid API key")) {
+            setError(
+              "Configuration error: Invalid Supabase API key. Please contact support."
+            );
+          } else if (
+            signInError.message.includes("Invalid login credentials")
+          ) {
+            setError("Invalid email or password. Please try again.");
+          } else {
+            setError(signInError.message || "Failed to sign in");
+          }
+          return;
+        }
 
         if (data.session) {
           setMessage("Signed in! Redirecting...");
@@ -63,7 +91,8 @@ const Auth: React.FC<AuthProps> = ({ isDark = true, onAuthSuccess }) => {
         }
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      console.error("Auth error:", err);
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
