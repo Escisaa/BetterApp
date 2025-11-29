@@ -34,9 +34,12 @@ export async function sendLicenseKey(email, licenseKey, plan = "yearly") {
     // Use Vercel domain for now (can be changed later to custom domain)
     let emailFrom = process.env.EMAIL_FROM;
     if (!emailFrom || !emailFrom.includes("@")) {
-      // Default to Vercel domain for now
+      // Default to Vercel domain - needs to be verified in Resend
       emailFrom = "noreply@better-app-git-main-escisaas-projects.vercel.app";
       console.warn(`EMAIL_FROM not set, using Vercel domain: ${emailFrom}`);
+      console.warn(
+        `⚠️  Verify this domain in Resend: https://resend.com/domains`
+      );
     }
 
     const planText = plan === "yearly" ? "Yearly" : "Monthly";
