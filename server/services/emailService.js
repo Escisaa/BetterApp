@@ -31,14 +31,14 @@ export async function sendLicenseKey(email, licenseKey, plan = "yearly") {
     }
 
     // Validate email configuration
-    // Use Vercel domain for now (can be changed later to custom domain)
+    // Use custom domain if set, otherwise fallback to Vercel domain
     let emailFrom = process.env.EMAIL_FROM;
     if (!emailFrom || !emailFrom.includes("@")) {
       // Default to Vercel domain - needs to be verified in Resend
       emailFrom = "noreply@better-app-git-main-escisaas-projects.vercel.app";
       console.warn(`EMAIL_FROM not set, using Vercel domain: ${emailFrom}`);
       console.warn(
-        `⚠️  Verify this domain in Resend: https://resend.com/domains`
+        `⚠️  Set EMAIL_FROM=noreply@betterapp.pro in Render and verify domain in Resend`
       );
     }
 
