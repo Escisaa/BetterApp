@@ -47,16 +47,23 @@ const Auth: React.FC<AuthProps> = ({ isDark = true, onAuthSuccess }) => {
           return;
         }
 
-        if (data.user && !data.session) {
-          setMessage(
-            "Check your email for the confirmation link to complete sign up!"
-          );
-        } else if (data.session) {
+        if (data.session) {
+          // Session created - user is logged in immediately
           setMessage("Account created! Redirecting...");
           setTimeout(() => {
             if (onAuthSuccess) onAuthSuccess();
             window.location.href = "/dashboard";
           }, 1000);
+        } else if (data.user && !data.session) {
+          // Email confirmation required
+          setMessage(
+            "Check your email for the confirmation link to complete sign up!"
+          );
+          // Optionally auto-redirect to sign in after a delay
+          setTimeout(() => {
+            setIsSignUp(false);
+            setMessage("You can sign in after confirming your email.");
+          }, 3000);
         }
       } else {
         const { data, error: signInError } =
