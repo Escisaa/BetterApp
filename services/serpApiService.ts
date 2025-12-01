@@ -1,6 +1,6 @@
 // SerpAPI service for fetching app store data
-const SERP_API_KEY =
-  "0368c56eebd03a3c27e212d9f829aedd1cb7e5d6fc653b9a4d4188892e482c63";
+// NOTE: SerpAPI is disabled - all icon fetching uses iTunes API via backend
+// This file is kept for reference but the service is not used
 const SERP_API_URL = "https://serpapi.com/search.json";
 
 export interface AppIconData {

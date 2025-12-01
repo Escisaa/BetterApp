@@ -33,7 +33,14 @@ const PORT = process.env.PORT || 3002;
 app.set("trust proxy", true);
 
 // Middleware
-app.use(cors());
+// CORS: Allow all origins (frontend on Vercel, backend on Render)
+// In production, consider restricting to specific domains for better security
+app.use(
+  cors({
+    origin: true, // Allow all origins (Vercel frontend)
+    credentials: true,
+  })
+);
 
 // Stripe webhook MUST be before express.json() to receive raw body for signature verification
 app.post(
