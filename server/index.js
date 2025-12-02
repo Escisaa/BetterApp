@@ -13,6 +13,7 @@ import {
   getLicenseInfo,
   activateLicense,
   getSupabaseClient,
+  getActiveLicenseByEmail,
 } from "./services/licenseService.js";
 import { handleStripeWebhook } from "./services/stripeService.js";
 import { createCheckoutSession } from "./services/stripeCheckout.js";
@@ -33,11 +34,39 @@ const PORT = process.env.PORT || 3002;
 app.set("trust proxy", true);
 
 // Middleware
-// CORS: Allow all origins (frontend on Vercel, backend on Render)
-// In production, consider restricting to specific domains for better security
+// CORS: Restrict to known frontend origins for security
+const allowedOrigins = [
+  "http://localhost:5173", // Frontend dev server
+  "http://localhost:3001", // Frontend dev server (alternative)
+  "https://better-app-weld.vercel.app", // Vercel deployment
+  "https://betterapp.pro", // Custom domain
+  /^https:\/\/better-app-.*\.vercel\.app$/, // Vercel preview deployments
+];
+
 app.use(
   cors({
-    origin: true, // Allow all origins (Vercel frontend)
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+
+      // Check if origin matches allowed list
+      const isAllowed = allowedOrigins.some((allowed) => {
+        if (typeof allowed === "string") {
+          return origin === allowed;
+        }
+        if (allowed instanceof RegExp) {
+          return allowed.test(origin);
+        }
+        return false;
+      });
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        console.warn(`⚠️  Blocked CORS request from: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
@@ -694,6 +723,44 @@ app.post("/api/license/resend", emailLimiter, async (req, res) => {
 });
 
 /**
+ * Get active license for user by email
+ * POST /api/license/by-email
+ */
+app.post("/api/license/by-email", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: "Email is required",
+      });
+    }
+
+    const license = await getActiveLicenseByEmail(email);
+
+    if (!license) {
+      return res.status(404).json({
+        success: false,
+        error: "No active license found for this email",
+      });
+    }
+
+    res.json({
+      success: true,
+      license,
+    });
+  } catch (error) {
+    console.error("Error fetching license by email:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch license",
+      message: error.message,
+    });
+  }
+});
+
+/**
  * Create Stripe checkout session
  * POST /api/stripe/checkout
  */
@@ -773,6 +840,31 @@ app.post("/api/stripe/portal", strictLimiter, async (req, res) => {
 // Webhook route moved above - it's now before express.json() middleware
 
 /**
+ * Health check endpoint - verify services are configured
+ * GET /api/health
+ */
+app.get("/api/health", async (req, res) => {
+  const health = {
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    services: {
+      gemini: !!process.env.GEMINI_API_KEY,
+      stripe: !!process.env.STRIPE_SECRET_KEY,
+      supabase:
+        !!process.env.SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY,
+      email: !!(process.env.EMAIL_PASSWORD || process.env.RESEND_API_KEY),
+    },
+  };
+
+  if (!health.services.gemini) {
+    health.status = "degraded";
+    health.message = "GEMINI_API_KEY not configured";
+  }
+
+  res.json(health);
+});
+
+/**
  * AI Analysis endpoint
  * POST /api/ai/analyze
  */
@@ -790,6 +882,7 @@ app.post("/api/ai/analyze", strictLimiter, async (req, res) => {
       console.error("GEMINI_API_KEY not configured");
       return res.status(500).json({
         error: "AI service is not configured. Please contact support.",
+        code: "GEMINI_NOT_CONFIGURED",
       });
     }
 
@@ -803,6 +896,7 @@ app.post("/api/ai/analyze", strictLimiter, async (req, res) => {
     if (errorMessage.includes("GEMINI_API_KEY")) {
       return res.status(500).json({
         error: "AI service is not configured. Please contact support.",
+        code: "GEMINI_NOT_CONFIGURED",
       });
     }
 
@@ -822,11 +916,30 @@ app.post("/api/ai/tags", strictLimiter, async (req, res) => {
         .status(400)
         .json({ error: "appName and reviews array required" });
     }
+
+    // Check if GEMINI_API_KEY is configured
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY not configured");
+      return res.status(500).json({
+        error: "AI service is not configured. Please contact support.",
+        code: "GEMINI_NOT_CONFIGURED",
+      });
+    }
+
     const tags = await generateTagsWithAI(appName, reviews);
     res.json({ tags });
   } catch (error) {
     console.error("Error in tags endpoint:", error);
-    res.status(500).json({ error: error.message || "Failed to generate tags" });
+    const errorMessage = error.message || "Failed to generate tags";
+
+    if (errorMessage.includes("GEMINI_API_KEY")) {
+      return res.status(500).json({
+        error: "AI service is not configured. Please contact support.",
+        code: "GEMINI_NOT_CONFIGURED",
+      });
+    }
+
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -846,6 +959,7 @@ app.post("/api/ai/chat", strictLimiter, async (req, res) => {
       console.error("GEMINI_API_KEY not configured");
       return res.status(500).json({
         error: "AI service is not configured. Please contact support.",
+        code: "GEMINI_NOT_CONFIGURED",
       });
     }
 
@@ -859,6 +973,7 @@ app.post("/api/ai/chat", strictLimiter, async (req, res) => {
     if (errorMessage.includes("GEMINI_API_KEY")) {
       return res.status(500).json({
         error: "AI service is not configured. Please contact support.",
+        code: "GEMINI_NOT_CONFIGURED",
       });
     }
 

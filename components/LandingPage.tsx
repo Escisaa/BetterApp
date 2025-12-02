@@ -393,6 +393,301 @@ const LandingPage: React.FC<LandingPageProps> = ({
         <InAction isDark={isDark} />
         <ChatDemo isDark={isDark} />
 
+        {/* Features Section */}
+        <motion.section
+          className={`py-24 ${isDark ? "bg-[#111213]" : "bg-white"}`}
+          variants={staggerContainer}
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true, margin: "-100px" }}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <motion.div className="text-center mb-16" variants={fadeInUp}>
+              <h2
+                className={`text-4xl sm:text-5xl font-extrabold mb-4 ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Everything you need to{" "}
+                <span className="text-orange-400">understand the market</span>
+              </h2>
+              <p
+                className={`text-lg ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                Comprehensive tools to analyze competitors, discover
+                opportunities, and make data-driven decisions
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Feature 1: AI-Powered Review Analysis */}
+              <motion.div
+                className={`rounded-xl p-6 border ${
+                  isDark
+                    ? "bg-[#1C1C1E] border-gray-800"
+                    : "bg-white border-gray-200 shadow-sm"
+                }`}
+                variants={fadeInUp}
+                whileHover={{ y: -4, scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <svg
+                    className="w-6 h-6 text-blue-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
+                  </svg>
+                </div>
+                <h3
+                  className={`text-xl font-semibold mb-2 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  AI-Powered Review Analysis
+                </h3>
+                <p
+                  className={`text-sm ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Get instant insights from thousands of user reviews.
+                  Understand what users love, hate, and want from any app in
+                  seconds.
+                </p>
+              </motion.div>
+
+              {/* Feature 2: ASO Keyword Tracking */}
+              <motion.div
+                className={`rounded-xl p-6 border ${
+                  isDark
+                    ? "bg-[#1C1C1E] border-gray-800"
+                    : "bg-white border-gray-200 shadow-sm"
+                }`}
+                variants={fadeInUp}
+                whileHover={{ y: -4, scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <svg
+                    className="w-6 h-6 text-purple-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                    />
+                  </svg>
+                </div>
+                <h3
+                  className={`text-xl font-semibold mb-2 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  ASO Keyword Tracking
+                </h3>
+                <p
+                  className={`text-sm ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Monitor your app's ranking position for any keyword. Track
+                  popularity, difficulty, and discover new opportunities to
+                  improve discoverability.
+                </p>
+              </motion.div>
+
+              {/* Feature 3: Competitive Intelligence */}
+              <motion.div
+                className={`rounded-xl p-6 border ${
+                  isDark
+                    ? "bg-[#1C1C1E] border-gray-800"
+                    : "bg-white border-gray-200 shadow-sm"
+                }`}
+                variants={fadeInUp}
+                whileHover={{ y: -4, scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <svg
+                    className="w-6 h-6 text-orange-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                </div>
+                <h3
+                  className={`text-xl font-semibold mb-2 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Competitive Intelligence
+                </h3>
+                <p
+                  className={`text-sm ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Get actionable strategies to beat your competitors. Discover
+                  conversion hacks, retention tactics, and monetization
+                  opportunities.
+                </p>
+              </motion.div>
+
+              {/* Feature 4: Keyword Discovery */}
+              <motion.div
+                className={`rounded-xl p-6 border ${
+                  isDark
+                    ? "bg-[#1C1C1E] border-gray-800"
+                    : "bg-white border-gray-200 shadow-sm"
+                }`}
+                variants={fadeInUp}
+                whileHover={{ y: -4, scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <svg
+                    className="w-6 h-6 text-green-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+                <h3
+                  className={`text-xl font-semibold mb-2 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Keyword Discovery
+                </h3>
+                <p
+                  className={`text-sm ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Automatically discover keywords your app already ranks for, or
+                  extract keywords from competitor apps to track your own
+                  performance.
+                </p>
+              </motion.div>
+
+              {/* Feature 5: Market Opportunities */}
+              <motion.div
+                className={`rounded-xl p-6 border ${
+                  isDark
+                    ? "bg-[#1C1C1E] border-gray-800"
+                    : "bg-white border-gray-200 shadow-sm"
+                }`}
+                variants={fadeInUp}
+                whileHover={{ y: -4, scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <svg
+                    className="w-6 h-6 text-yellow-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                    />
+                  </svg>
+                </div>
+                <h3
+                  className={`text-xl font-semibold mb-2 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Market Opportunities
+                </h3>
+                <p
+                  className={`text-sm ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Identify underserved features and gaps in your niche market.
+                  Find what users are asking for that competitors aren't
+                  delivering.
+                </p>
+              </motion.div>
+
+              {/* Feature 6: Performance Tracking */}
+              <motion.div
+                className={`rounded-xl p-6 border ${
+                  isDark
+                    ? "bg-[#1C1C1E] border-gray-800"
+                    : "bg-white border-gray-200 shadow-sm"
+                }`}
+                variants={fadeInUp}
+                whileHover={{ y: -4, scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center mb-4">
+                  <svg
+                    className="w-6 h-6 text-indigo-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                </div>
+                <h3
+                  className={`text-xl font-semibold mb-2 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Performance Tracking
+                </h3>
+                <p
+                  className={`text-sm ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Track your app's ratings, reviews, and keyword positions over
+                  time. Monitor trends and measure the impact of your updates.
+                </p>
+              </motion.div>
+            </div>
+          </div>
+        </motion.section>
+
         {/* Pricing Section */}
         <motion.section
           id="pricing"

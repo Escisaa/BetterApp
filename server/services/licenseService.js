@@ -135,6 +135,68 @@ export async function getLicenseInfo(licenseKey) {
 }
 
 /**
+ * Get an active license for a user by email
+ */
+export async function getActiveLicenseByEmail(email) {
+  try {
+    const supabase = getSupabaseClient();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Find active subscription for this email
+    const { data: subscription, error: subscriptionError } = await supabase
+      .from("subscriptions")
+      .select("id, plan, status, current_period_end, email, created_at")
+      .eq("email", normalizedEmail)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (subscriptionError || !subscription) {
+      return null;
+    }
+
+    if (subscription.status !== "active") {
+      return null;
+    }
+
+    if (subscription.current_period_end) {
+      const periodEnd = new Date(subscription.current_period_end);
+      if (periodEnd < new Date()) {
+        return null;
+      }
+    }
+
+    // Find active license for this subscription
+    const { data: license, error: licenseError } = await supabase
+      .from("licenses")
+      .select("*")
+      .eq("subscription_id", subscription.id)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (licenseError || !license) {
+      return null;
+    }
+
+    const expiresAt = new Date(license.expires_at);
+    if (expiresAt < new Date()) {
+      return null;
+    }
+
+    return {
+      licenseKey: license.license_key,
+      plan: subscription.plan || "yearly",
+      expiresAt: license.expires_at,
+    };
+  } catch (error) {
+    console.error("Error getting license by email:", error);
+    return null;
+  }
+}
+
+/**
  * Activate a license (mark as activated)
  */
 export async function activateLicense(licenseKey, deviceId) {

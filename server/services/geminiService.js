@@ -7,18 +7,29 @@ function getAI() {
   if (!ai) {
     const API_KEY = process.env.GEMINI_API_KEY;
     if (!API_KEY) {
-      console.error("GEMINI_API_KEY not found in environment variables");
+      const envKeys = Object.keys(process.env).filter(
+        (k) => k.includes("GEMINI") || k.includes("API") || k.includes("KEY")
+      );
+      console.error("❌ GEMINI_API_KEY not found in environment variables");
       console.error(
-        "Available env vars:",
-        Object.keys(process.env).filter(
-          (k) => k.includes("GEMINI") || k.includes("API")
-        )
+        "🔍 Available env vars containing 'GEMINI', 'API', or 'KEY':",
+        envKeys
+      );
+      console.error(
+        "💡 Make sure GEMINI_API_KEY is set in Render environment variables"
       );
       throw new Error(
-        "GEMINI_API_KEY environment variable not set. Please check Render environment variables."
+        "GEMINI_API_KEY environment variable not set. Please check Render environment variables and restart the service."
+      );
+    }
+    // Validate API key format (starts with AIza)
+    if (!API_KEY.startsWith("AIza")) {
+      console.warn(
+        "⚠️  GEMINI_API_KEY format looks incorrect (should start with 'AIza')"
       );
     }
     ai = new GoogleGenAI({ apiKey: API_KEY });
+    console.log("✅ Gemini AI initialized successfully");
   }
   return ai;
 }

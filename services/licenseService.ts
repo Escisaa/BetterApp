@@ -150,3 +150,25 @@ export async function resendLicenseKey(
     return { success: false, message: "Failed to resend license key" };
   }
 }
+
+export async function fetchLicenseForEmail(email: string): Promise<{
+  success: boolean;
+  license?: { licenseKey: string; plan: string; expiresAt: string };
+  error?: string;
+}> {
+  try {
+    const response = await fetch(`${API_URL}/api/license/by-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      return { success: false, error: "No active license found" };
+    }
+
+    return await response.json();
+  } catch (error) {
+    return { success: false, error: "Failed to fetch license" };
+  }
+}

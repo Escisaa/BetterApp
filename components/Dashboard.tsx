@@ -51,6 +51,7 @@ import {
   getLicenseDetails,
   openCustomerPortal,
   resendLicenseKey,
+  fetchLicenseForEmail,
   type LicenseDetails,
 } from "../services/licenseService";
 import {
@@ -958,17 +959,44 @@ const Dashboard: React.FC = () => {
   const [selectedTrackedApp, setSelectedTrackedApp] =
     useState<TrackedApp | null>(null);
 
-  // Check license on mount but don't show modal immediately (let user explore first)
+  // Check license on mount and auto-link by email if available
   useEffect(() => {
     const checkLicense = async () => {
-      const valid = await checkLicenseStatus();
-      setHasLicense(valid);
-      if (valid) {
-        // Load license details if valid
-        const details = await getLicenseDetails();
-        setLicenseDetails(details);
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const email = session?.user?.email || null;
+        if (email) {
+          setResendEmail((prev) => prev || email);
+        }
+
+        let valid = await checkLicenseStatus();
+        setHasLicense(valid);
+
+        if (valid) {
+          const details = await getLicenseDetails();
+          setLicenseDetails(details);
+          return;
+        }
+
+        // If no license stored locally but user is authenticated, fetch by email
+        if (email) {
+          const result = await fetchLicenseForEmail(email);
+          if (result?.success && result.license?.licenseKey) {
+            saveLicense(result.license.licenseKey);
+            valid = await checkLicenseStatus();
+            setHasLicense(valid);
+            if (valid) {
+              const details = await getLicenseDetails();
+              setLicenseDetails(details);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking license:", error);
+        setHasLicense(false);
       }
-      // Don't auto-show modal - let user click features to trigger it
     };
     checkLicense();
   }, []);
@@ -1480,15 +1508,15 @@ ${analysisResult.marketOpportunities}
     ];
 
     return (
-      <div className="min-h-screen bg-[#111213] flex flex-col font-sans p-8">
-        <header className="flex justify-between items-center">
+      <div className="min-h-screen bg-[#111213] flex flex-col font-sans p-4 sm:p-8">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center space-x-3">
             <Logo size={32} className="rounded-lg" />
-            <span className="font-semibold text-xl tracking-tight text-white">
+            <span className="font-semibold text-lg sm:text-xl tracking-tight text-white">
               BetterApp
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={async () => {
                 await supabase.auth.signOut();
@@ -1531,7 +1559,7 @@ ${analysisResult.marketOpportunities}
                     setShowTrackedModal(false);
                   }
                 }}
-                className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full font-medium transition-all duration-200 text-base ${
+                className={`flex items-center gap-2 sm:gap-2.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full font-medium transition-all duration-200 text-sm sm:text-base ${
                   (tab.id === "license" && showLicenseModal) ||
                   (tab.id === "tracked" && showTrackedModal) ||
                   (tab.id === "keywords" && (view as string) === "keywords")
@@ -1540,7 +1568,7 @@ ${analysisResult.marketOpportunities}
                 }`}
               >
                 {tab.icon}
-                <span>{tab.label}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
               </button>
             ))}
           </div>
@@ -2074,7 +2102,7 @@ ${analysisResult.marketOpportunities}
 
         {!showTrackedModal && !showLicenseModal && view === "search" && (
           <div className="flex-grow flex flex-col items-center justify-center">
-            <main className="relative w-full h-96 my-12 flex items-center justify-center">
+            <main className="relative w-full h-64 sm:h-96 my-8 sm:my-12 flex items-center justify-center">
               {isLoadingBubbles ? (
                 <div className="flex items-center justify-center">
                   <div className="text-center text-gray-400 space-y-2">
@@ -2084,7 +2112,7 @@ ${analysisResult.marketOpportunities}
                 </div>
               ) : (
                 <div
-                  className="w-96 h-96 relative"
+                  className="w-64 h-64 sm:w-96 sm:h-96 relative"
                   style={{ animation: "rotate-wheel 60s linear infinite" }}
                 >
                   {bubbleApps.map((app, index) => {
@@ -2158,9 +2186,9 @@ ${analysisResult.marketOpportunities}
               )}
             </main>
 
-            <footer className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto">
+            <footer className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto px-4">
               <div className="w-full relative">
-                <SearchIcon className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <SearchIcon className="absolute left-3 sm:left-5 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4 sm:w-5 sm:h-5" />
                 <input
                   type="text"
                   placeholder="Search by app name, developer, App Store URL, or App ID..."
@@ -2169,10 +2197,10 @@ ${analysisResult.marketOpportunities}
                   onKeyDown={(e) =>
                     e.key === "Enter" && handleSearch(searchQuery)
                   }
-                  className="w-full pl-12 pr-4 py-3 text-base rounded-full border border-gray-700 bg-gray-900 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-full border border-gray-700 bg-gray-900 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 text-xs sm:text-sm text-center">
                 Search for any app on the App Store to analyze user reviews
               </p>
             </footer>
@@ -2417,9 +2445,9 @@ ${analysisResult.marketOpportunities}
     );
 
     return (
-      <div className="flex h-screen bg-[#111213]">
+      <div className="flex flex-col md:flex-row h-screen bg-[#111213]">
         {/* Left Sidebar - Apps List */}
-        <aside className="w-80 bg-[#111213] border-r border-gray-800 flex flex-col shrink-0">
+        <aside className="w-full md:w-80 bg-[#111213] border-r border-gray-800 flex flex-col shrink-0 max-h-[40vh] md:max-h-none">
           <div className="p-4 border-b border-gray-800 bg-[#111213]">
             <button
               onClick={() => setView("search")}
@@ -2868,8 +2896,8 @@ ${analysisResult.marketOpportunities}
 
   // Analysis View
   return (
-    <div className="flex h-screen bg-[#111213]">
-      <aside className="w-96 bg-[#1C1C1E] border-r border-gray-800 flex flex-col shrink-0">
+    <div className="flex flex-col md:flex-row h-screen bg-[#111213]">
+      <aside className="w-full md:w-96 bg-[#1C1C1E] border-r border-gray-800 flex flex-col shrink-0 max-h-[40vh] md:max-h-none">
         <div className="p-4 border-b border-gray-800">
           <button
             onClick={handleSearchView}
@@ -2963,7 +2991,7 @@ ${analysisResult.marketOpportunities}
                 </p>
               </div>
             ) : (
-              <div className="max-w-4xl mx-auto space-y-8 p-8">
+              <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-8">
                 <AppDetailHeader app={selectedApp} />
                 <Screenshots urls={selectedApp.screenshots} />
 
@@ -3677,7 +3705,7 @@ ${analysisResult.marketOpportunities}
 
                   {/* Content */}
                   {activeTab === "premium" ? (
-                    <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                       {/* LIKES Column */}
                       <div>
                         <h3 className="text-lg font-semibold text-green-400 mb-4 flex items-center gap-2">
@@ -4101,13 +4129,13 @@ const KeywordsView: React.FC<{
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#111213]">
       {/* Top Toolbar - Like Try Astro */}
-      <div className="flex-shrink-0 border-b border-gray-800 bg-[#1C1C1E] px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold text-white flex items-center gap-2">
+      <div className="flex-shrink-0 border-b border-gray-800 bg-[#1C1C1E] px-4 sm:px-6 py-3 sm:py-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+          <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
+            <h1 className="text-lg sm:text-xl font-semibold text-white flex items-center gap-2">
               Keywords
               {selectedApp && (
-                <span className="text-sm font-normal text-gray-400">
+                <span className="hidden sm:inline text-sm font-normal text-gray-400">
                   - {selectedApp.name}
                 </span>
               )}
@@ -4139,7 +4167,7 @@ const KeywordsView: React.FC<{
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
-              className="px-3 py-1.5 bg-gray-800 border border-gray-700 text-white rounded-lg text-sm"
+              className="px-2 sm:px-3 py-1.5 bg-gray-800 border border-gray-700 text-white rounded-lg text-xs sm:text-sm"
             >
               {APP_STORE_COUNTRIES.map((country) => (
                 <option key={country.code} value={country.code}>
@@ -4148,14 +4176,14 @@ const KeywordsView: React.FC<{
               ))}
             </select>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {selectedApp && (
               <button
                 onClick={onShowKeywordSearchModal}
-                className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-1.5 sm:gap-2"
               >
                 <svg
-                  className="w-4 h-4"
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -4167,7 +4195,8 @@ const KeywordsView: React.FC<{
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                Add Keywords +
+                <span className="hidden sm:inline">Add Keywords +</span>
+                <span className="sm:hidden">Add +</span>
               </button>
             )}
             {selectedApp && (
@@ -4402,705 +4431,709 @@ const KeywordsView: React.FC<{
 
         {/* Keywords Table - Like Try Astro */}
         <div className="flex-1 overflow-auto">
-          <table className="w-full">
-            <thead className="sticky top-0 bg-[#111213] z-10 border-b border-gray-800">
-              <tr>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                  <div className="flex items-center gap-1">
-                    Keyword
-                    <button className="text-gray-500 hover:text-gray-400">
-                      <svg
-                        className="w-3 h-3"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <circle
-                          cx="10"
-                          cy="10"
-                          r="8"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                        />
-                        <text
-                          x="10"
-                          y="13"
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="currentColor"
-                        >
-                          i
-                        </text>
-                      </svg>
-                    </button>
-                  </div>
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                  <div className="flex items-center gap-1">
-                    Notes
-                    <button className="text-gray-500 hover:text-gray-400">
-                      <svg
-                        className="w-3 h-3"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <circle
-                          cx="10"
-                          cy="10"
-                          r="8"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                        />
-                        <text
-                          x="10"
-                          y="13"
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="currentColor"
-                        >
-                          i
-                        </text>
-                      </svg>
-                    </button>
-                  </div>
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                  <div className="flex items-center gap-1">
-                    Last update
-                    <button className="text-gray-500 hover:text-gray-400">
-                      <svg
-                        className="w-3 h-3"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <circle
-                          cx="10"
-                          cy="10"
-                          r="8"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                        />
-                        <text
-                          x="10"
-                          y="13"
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="currentColor"
-                        >
-                          i
-                        </text>
-                      </svg>
-                    </button>
-                  </div>
-                </th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-400">
-                  <div className="flex items-center justify-end gap-1">
-                    Popularity
-                    <button className="text-gray-500 hover:text-gray-400">
-                      <svg
-                        className="w-3 h-3"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <circle
-                          cx="10"
-                          cy="10"
-                          r="8"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                        />
-                        <text
-                          x="10"
-                          y="13"
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="currentColor"
-                        >
-                          i
-                        </text>
-                      </svg>
-                    </button>
-                  </div>
-                </th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-400">
-                  <div className="flex items-center justify-end gap-1">
-                    Difficulty
-                    <button className="text-gray-500 hover:text-gray-400">
-                      <svg
-                        className="w-3 h-3"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <circle
-                          cx="10"
-                          cy="10"
-                          r="8"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                        />
-                        <text
-                          x="10"
-                          y="13"
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="currentColor"
-                        >
-                          i
-                        </text>
-                      </svg>
-                    </button>
-                  </div>
-                </th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-400">
-                  <div className="flex items-center justify-end gap-1">
-                    Position
-                    <button className="text-gray-500 hover:text-gray-400">
-                      <svg
-                        className="w-3 h-3"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <circle
-                          cx="10"
-                          cy="10"
-                          r="8"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                        />
-                        <text
-                          x="10"
-                          y="13"
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="currentColor"
-                        >
-                          i
-                        </text>
-                      </svg>
-                    </button>
-                  </div>
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                  <div className="flex items-center gap-1">
-                    Apps in Ranking
-                    <button className="text-gray-500 hover:text-gray-400">
-                      <svg
-                        className="w-3 h-3"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <circle
-                          cx="10"
-                          cy="10"
-                          r="8"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                        />
-                        <text
-                          x="10"
-                          y="13"
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="currentColor"
-                        >
-                          i
-                        </text>
-                      </svg>
-                    </button>
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {trackedKeywords.length === 0 ? (
-                // Empty state with helpful message
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[800px]">
+              <thead className="sticky top-0 bg-[#111213] z-10 border-b border-gray-800">
                 <tr>
-                  <td colSpan={7} className="py-16 text-center">
-                    <div className="max-w-md mx-auto">
-                      <svg
-                        className="w-16 h-16 text-gray-600 mx-auto mb-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                        />
-                      </svg>
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        No Keywords Tracked Yet
-                      </h3>
-                      <p className="text-gray-400 text-sm mb-4">
-                        Start tracking keywords to monitor your app's App Store
-                        rankings and discoverability.
-                      </p>
-                      <div className="space-y-2 text-left max-w-sm mx-auto">
-                        <p className="text-gray-500 text-xs">
-                          <strong className="text-gray-300">
-                            Quick Start:
-                          </strong>
-                        </p>
-                        <ol className="list-decimal list-inside space-y-1 text-xs text-gray-400">
-                          <li>
-                            Click "Add Keywords +" to manually add keywords
-                          </li>
-                          <li>
-                            Or click "Found X Suggestions" to discover keywords
-                            your app already ranks for
-                          </li>
-                          <li>
-                            Click any keyword row to check its ranking position
-                          </li>
-                        </ol>
-                      </div>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                    <div className="flex items-center gap-1">
+                      Keyword
+                      <button className="text-gray-500 hover:text-gray-400">
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <circle
+                            cx="10"
+                            cy="10"
+                            r="8"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                          <text
+                            x="10"
+                            y="13"
+                            textAnchor="middle"
+                            fontSize="8"
+                            fill="currentColor"
+                          >
+                            i
+                          </text>
+                        </svg>
+                      </button>
                     </div>
-                  </td>
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                    <div className="flex items-center gap-1">
+                      Notes
+                      <button className="text-gray-500 hover:text-gray-400">
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <circle
+                            cx="10"
+                            cy="10"
+                            r="8"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                          <text
+                            x="10"
+                            y="13"
+                            textAnchor="middle"
+                            fontSize="8"
+                            fill="currentColor"
+                          >
+                            i
+                          </text>
+                        </svg>
+                      </button>
+                    </div>
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                    <div className="flex items-center gap-1">
+                      Last update
+                      <button className="text-gray-500 hover:text-gray-400">
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <circle
+                            cx="10"
+                            cy="10"
+                            r="8"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                          <text
+                            x="10"
+                            y="13"
+                            textAnchor="middle"
+                            fontSize="8"
+                            fill="currentColor"
+                          >
+                            i
+                          </text>
+                        </svg>
+                      </button>
+                    </div>
+                  </th>
+                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-400">
+                    <div className="flex items-center justify-end gap-1">
+                      Popularity
+                      <button className="text-gray-500 hover:text-gray-400">
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <circle
+                            cx="10"
+                            cy="10"
+                            r="8"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                          <text
+                            x="10"
+                            y="13"
+                            textAnchor="middle"
+                            fontSize="8"
+                            fill="currentColor"
+                          >
+                            i
+                          </text>
+                        </svg>
+                      </button>
+                    </div>
+                  </th>
+                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-400">
+                    <div className="flex items-center justify-end gap-1">
+                      Difficulty
+                      <button className="text-gray-500 hover:text-gray-400">
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <circle
+                            cx="10"
+                            cy="10"
+                            r="8"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                          <text
+                            x="10"
+                            y="13"
+                            textAnchor="middle"
+                            fontSize="8"
+                            fill="currentColor"
+                          >
+                            i
+                          </text>
+                        </svg>
+                      </button>
+                    </div>
+                  </th>
+                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-400">
+                    <div className="flex items-center justify-end gap-1">
+                      Position
+                      <button className="text-gray-500 hover:text-gray-400">
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <circle
+                            cx="10"
+                            cy="10"
+                            r="8"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                          <text
+                            x="10"
+                            y="13"
+                            textAnchor="middle"
+                            fontSize="8"
+                            fill="currentColor"
+                          >
+                            i
+                          </text>
+                        </svg>
+                      </button>
+                    </div>
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                    <div className="flex items-center gap-1">
+                      Apps in Ranking
+                      <button className="text-gray-500 hover:text-gray-400">
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <circle
+                            cx="10"
+                            cy="10"
+                            r="8"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                          <text
+                            x="10"
+                            y="13"
+                            textAnchor="middle"
+                            fontSize="8"
+                            fill="currentColor"
+                          >
+                            i
+                          </text>
+                        </svg>
+                      </button>
+                    </div>
+                  </th>
                 </tr>
-              ) : (
-                <>
-                  {trackedKeywords.map((keyword, idx) => (
-                    <tr
-                      key={keyword.id}
-                      onClick={() => {
-                        if (!isCheckingRanking) {
-                          handleCheckRanking(keyword);
-                        }
-                      }}
-                      className={`border-b border-gray-800 hover:bg-gray-800/30 transition-colors cursor-pointer ${
-                        idx % 2 === 0 ? "bg-gray-800/10" : "bg-gray-800/5"
-                      }`}
-                    >
-                      <td className="py-4 px-4">
-                        <div className="relative group">
-                          <span className="text-white font-medium">
-                            {keyword.keyword}
-                          </span>
-                          {selectedCountry !== "US" && (
-                            <div
-                              className="absolute left-0 top-full mt-2 hidden group-hover:block z-50 bg-[#1C1C1E] border border-gray-700 rounded-lg p-3 shadow-xl min-w-[200px]"
-                              onMouseEnter={async () => {
-                                const cacheKey = `main_${keyword.keyword}_EN`;
-                                if (!translatedKeywords.has(cacheKey)) {
-                                  const translation = await translateKeyword(
-                                    keyword.keyword,
-                                    "EN"
-                                  );
-                                  if (
-                                    translation &&
-                                    translation !== keyword.keyword
-                                  ) {
-                                    setTranslatedKeywords(
-                                      new Map(
-                                        translatedKeywords.set(
-                                          cacheKey,
-                                          translation
-                                        )
-                                      )
+              </thead>
+              <tbody>
+                {trackedKeywords.length === 0 ? (
+                  // Empty state with helpful message
+                  <tr>
+                    <td colSpan={7} className="py-16 text-center">
+                      <div className="max-w-md mx-auto">
+                        <svg
+                          className="w-16 h-16 text-gray-600 mx-auto mb-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                          />
+                        </svg>
+                        <h3 className="text-lg font-semibold text-white mb-2">
+                          No Keywords Tracked Yet
+                        </h3>
+                        <p className="text-gray-400 text-sm mb-4">
+                          Start tracking keywords to monitor your app's App
+                          Store rankings and discoverability.
+                        </p>
+                        <div className="space-y-2 text-left max-w-sm mx-auto">
+                          <p className="text-gray-500 text-xs">
+                            <strong className="text-gray-300">
+                              Quick Start:
+                            </strong>
+                          </p>
+                          <ol className="list-decimal list-inside space-y-1 text-xs text-gray-400">
+                            <li>
+                              Click "Add Keywords +" to manually add keywords
+                            </li>
+                            <li>
+                              Or click "Found X Suggestions" to discover
+                              keywords your app already ranks for
+                            </li>
+                            <li>
+                              Click any keyword row to check its ranking
+                              position
+                            </li>
+                          </ol>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <>
+                    {trackedKeywords.map((keyword, idx) => (
+                      <tr
+                        key={keyword.id}
+                        onClick={() => {
+                          if (!isCheckingRanking) {
+                            handleCheckRanking(keyword);
+                          }
+                        }}
+                        className={`border-b border-gray-800 hover:bg-gray-800/30 transition-colors cursor-pointer ${
+                          idx % 2 === 0 ? "bg-gray-800/10" : "bg-gray-800/5"
+                        }`}
+                      >
+                        <td className="py-4 px-4">
+                          <div className="relative group">
+                            <span className="text-white font-medium">
+                              {keyword.keyword}
+                            </span>
+                            {selectedCountry !== "US" && (
+                              <div
+                                className="absolute left-0 top-full mt-2 hidden group-hover:block z-50 bg-[#1C1C1E] border border-gray-700 rounded-lg p-3 shadow-xl min-w-[200px]"
+                                onMouseEnter={async () => {
+                                  const cacheKey = `main_${keyword.keyword}_EN`;
+                                  if (!translatedKeywords.has(cacheKey)) {
+                                    const translation = await translateKeyword(
+                                      keyword.keyword,
+                                      "EN"
                                     );
+                                    if (
+                                      translation &&
+                                      translation !== keyword.keyword
+                                    ) {
+                                      setTranslatedKeywords(
+                                        new Map(
+                                          translatedKeywords.set(
+                                            cacheKey,
+                                            translation
+                                          )
+                                        )
+                                      );
+                                    }
                                   }
-                                }
-                              }}
-                            >
-                              <div className="text-xs text-gray-400 mb-1">
-                                English Translation:
-                              </div>
-                              <div className="text-white text-sm">
-                                {translatedKeywords.get(
-                                  `main_${keyword.keyword}_EN`
-                                ) || "Translating..."}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-1">
-                          {keyword.notes && keyword.notes.length > 0 ? (
-                            keyword.notes.map((note, noteIdx) => (
-                              <div
-                                key={noteIdx}
-                                className={`w-2 h-2 rounded-full ${
-                                  note === "purple"
-                                    ? "bg-purple-500"
-                                    : note === "orange"
-                                    ? "bg-orange-500"
-                                    : note === "blue"
-                                    ? "bg-blue-500"
-                                    : "bg-gray-500"
-                                }`}
-                              />
-                            ))
-                          ) : (
-                            <span className="text-gray-600 text-xs">—</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        {keyword.lastChecked ? (
-                          <span className="text-gray-400 text-sm">
-                            {(() => {
-                              const date = new Date(keyword.lastChecked);
-                              const now = new Date();
-                              const diffMs = now.getTime() - date.getTime();
-                              const diffMins = Math.floor(diffMs / 60000);
-                              const diffHours = Math.floor(diffMs / 3600000);
-                              const diffDays = Math.floor(diffMs / 86400000);
-
-                              if (diffMins < 1) return "A few seconds...";
-                              if (diffMins < 60)
-                                return `${diffMins} minute${
-                                  diffMins > 1 ? "s" : ""
-                                } ago`;
-                              if (diffHours < 24)
-                                return `${diffHours} hour${
-                                  diffHours > 1 ? "s" : ""
-                                } ago`;
-                              return `${diffDays} day${
-                                diffDays > 1 ? "s" : ""
-                              } ago`;
-                            })()}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500 text-sm">Never</span>
-                        )}
-                      </td>
-                      <td className="py-4 px-4 text-right">
-                        {keyword.popularity !== undefined ? (
-                          <div className="flex items-center justify-end gap-2">
-                            <span className="text-white text-sm font-medium w-8 text-right">
-                              {keyword.popularity}
-                            </span>
-                            <div className="w-16 h-2 bg-gray-800 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full ${
-                                  keyword.popularity < 30
-                                    ? "bg-red-500"
-                                    : keyword.popularity < 60
-                                    ? "bg-yellow-500"
-                                    : "bg-green-500"
-                                }`}
-                                style={{ width: `${keyword.popularity}%` }}
-                              />
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-gray-500 text-sm">—</span>
-                        )}
-                      </td>
-                      <td className="py-4 px-4 text-right">
-                        {keyword.difficulty !== undefined ? (
-                          <div className="flex items-center justify-end gap-2">
-                            <span className="text-white text-sm font-medium w-8 text-right">
-                              {keyword.difficulty}
-                            </span>
-                            <div className="w-16 h-2 bg-gray-800 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full ${
-                                  keyword.difficulty < 30
-                                    ? "bg-green-500"
-                                    : keyword.difficulty < 70
-                                    ? "bg-yellow-500"
-                                    : "bg-red-500"
-                                }`}
-                                style={{ width: `${keyword.difficulty}%` }}
-                              />
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-gray-500 text-sm">—</span>
-                        )}
-                      </td>
-                      <td className="py-4 px-4 text-right">
-                        {isCheckingRanking === keyword.id ? (
-                          <div className="flex items-center justify-end gap-2">
-                            <svg
-                              className="animate-spin h-4 w-4 text-orange-400"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              />
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              />
-                            </svg>
-                            <span className="text-gray-400 text-xs">
-                              Checking...
-                            </span>
-                          </div>
-                        ) : keyword.position ? (
-                          <div className="flex items-center justify-end gap-1">
-                            <span className="text-white font-semibold">
-                              #{keyword.position}
-                            </span>
-                            {keyword.positionChange !== undefined &&
-                              keyword.positionChange !== 0 && (
-                                <span
-                                  className={`text-xs font-medium ${
-                                    keyword.positionChange > 0
-                                      ? "text-green-400"
-                                      : "text-red-400"
-                                  }`}
-                                >
-                                  {keyword.positionChange > 0 ? "↑" : "↓"}
-                                  {Math.abs(keyword.positionChange)}
-                                </span>
-                              )}
-                            {keyword.history && keyword.history.length > 1 && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setHoveredKeyword(
-                                    hoveredKeyword === keyword.id
-                                      ? null
-                                      : keyword.id
-                                  );
                                 }}
-                                className="ml-2 text-gray-400 hover:text-orange-400 transition-colors"
-                                title="View position history"
                               >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                  />
-                                </svg>
-                              </button>
+                                <div className="text-xs text-gray-400 mb-1">
+                                  English Translation:
+                                </div>
+                                <div className="text-white text-sm">
+                                  {translatedKeywords.get(
+                                    `main_${keyword.keyword}_EN`
+                                  ) || "Translating..."}
+                                </div>
+                              </div>
                             )}
                           </div>
-                        ) : keyword.lastChecked ? (
-                          <div className="flex flex-col items-end gap-1">
-                            <span className="text-gray-500 text-sm">
-                              Not in top 25
-                            </span>
-                            <span className="text-gray-600 text-xs">
-                              Click to check
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-end gap-1">
-                            <span className="text-gray-500 text-sm">—</span>
-                            <span className="text-gray-600 text-xs">
-                              Click to check
-                            </span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-4 px-4">
-                        {keyword.appsInRanking &&
-                        keyword.appsInRanking.length > 0 ? (
+                        </td>
+                        <td className="py-4 px-4">
                           <div className="flex items-center gap-1">
-                            {keyword.appsInRanking.slice(0, 3).map((app) => (
-                              <img
-                                key={app.id}
-                                src={app.icon}
-                                alt={app.name}
-                                className="w-6 h-6 rounded-lg cursor-pointer hover:ring-2 hover:ring-orange-500 transition-all"
-                                title={`${app.name} - Click to extract keywords`}
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  if (!selectedApp) return;
-                                  setSelectedCompetitorApp({
-                                    ...app,
-                                    id: app.id,
-                                  } as App);
-                                  setShowCompetitorKeywordsModal(true);
-                                  try {
-                                    // Fetch full app details first
-                                    const fullApp = await getAppDetails(
-                                      "",
-                                      app.id
-                                    );
-                                    const keywords =
-                                      await extractCompetitorKeywords(
-                                        fullApp,
-                                        selectedCountry
-                                      );
-                                    setCompetitorKeywords(keywords);
-                                  } catch (error) {
-                                    console.error(
-                                      "Error extracting competitor keywords:",
-                                      error
-                                    );
-                                    setCompetitorKeywords([]);
-                                  }
-                                }}
-                              />
-                            ))}
-                            {keyword.totalAppsInRanking &&
-                              keyword.totalAppsInRanking > 3 && (
-                                <span className="text-gray-400 text-xs ml-1">
-                                  +{keyword.totalAppsInRanking - 3}
-                                </span>
-                              )}
+                            {keyword.notes && keyword.notes.length > 0 ? (
+                              keyword.notes.map((note, noteIdx) => (
+                                <div
+                                  key={noteIdx}
+                                  className={`w-2 h-2 rounded-full ${
+                                    note === "purple"
+                                      ? "bg-purple-500"
+                                      : note === "orange"
+                                      ? "bg-orange-500"
+                                      : note === "blue"
+                                      ? "bg-blue-500"
+                                      : "bg-gray-500"
+                                  }`}
+                                />
+                              ))
+                            ) : (
+                              <span className="text-gray-600 text-xs">—</span>
+                            )}
                           </div>
-                        ) : (
-                          <span className="text-gray-500 text-sm">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {/* Historical Chart Modal for selected keyword */}
-                  {hoveredKeyword &&
-                    (() => {
-                      const keyword = trackedKeywords.find(
-                        (k) => k.id === hoveredKeyword
-                      );
-                      if (
-                        !keyword ||
-                        !keyword.history ||
-                        keyword.history.length < 2
-                      )
-                        return null;
+                        </td>
+                        <td className="py-4 px-4">
+                          {keyword.lastChecked ? (
+                            <span className="text-gray-400 text-sm">
+                              {(() => {
+                                const date = new Date(keyword.lastChecked);
+                                const now = new Date();
+                                const diffMs = now.getTime() - date.getTime();
+                                const diffMins = Math.floor(diffMs / 60000);
+                                const diffHours = Math.floor(diffMs / 3600000);
+                                const diffDays = Math.floor(diffMs / 86400000);
 
-                      const chartData = keyword.history
-                        .slice(-KEYWORD_CONFIG.HISTORY_RETENTION_DAYS) // Last N data points
-                        .map((h) => ({
-                          date: new Date(h.date).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          }),
-                          position: h.position,
-                          popularity: h.popularity,
-                          difficulty: h.difficulty,
-                        }));
-
-                      return (
-                        <tr key={`chart-${hoveredKeyword}`}>
-                          <td
-                            colSpan={7}
-                            className="p-6 bg-[#1C1C1E] border-b border-gray-800"
-                          >
-                            <div className="mb-2 flex items-center justify-between">
-                              <h3 className="text-white font-semibold">
-                                Position History: {keyword.keyword}
-                              </h3>
-                              <button
-                                onClick={() => setHoveredKeyword(null)}
-                                className="text-gray-400 hover:text-white"
+                                if (diffMins < 1) return "A few seconds...";
+                                if (diffMins < 60)
+                                  return `${diffMins} minute${
+                                    diffMins > 1 ? "s" : ""
+                                  } ago`;
+                                if (diffHours < 24)
+                                  return `${diffHours} hour${
+                                    diffHours > 1 ? "s" : ""
+                                  } ago`;
+                                return `${diffDays} day${
+                                  diffDays > 1 ? "s" : ""
+                                } ago`;
+                              })()}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500 text-sm">Never</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          {keyword.popularity !== undefined ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <span className="text-white text-sm font-medium w-8 text-right">
+                                {keyword.popularity}
+                              </span>
+                              <div className="w-16 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${
+                                    keyword.popularity < 30
+                                      ? "bg-red-500"
+                                      : keyword.popularity < 60
+                                      ? "bg-yellow-500"
+                                      : "bg-green-500"
+                                  }`}
+                                  style={{ width: `${keyword.popularity}%` }}
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500 text-sm">—</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          {keyword.difficulty !== undefined ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <span className="text-white text-sm font-medium w-8 text-right">
+                                {keyword.difficulty}
+                              </span>
+                              <div className="w-16 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${
+                                    keyword.difficulty < 30
+                                      ? "bg-green-500"
+                                      : keyword.difficulty < 70
+                                      ? "bg-yellow-500"
+                                      : "bg-red-500"
+                                  }`}
+                                  style={{ width: `${keyword.difficulty}%` }}
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500 text-sm">—</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          {isCheckingRanking === keyword.id ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <svg
+                                className="animate-spin h-4 w-4 text-orange-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
                               >
-                                <svg
-                                  className="w-5 h-5"
-                                  fill="none"
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
                                   stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M6 18L18 6M6 6l12 12"
-                                  />
-                                </svg>
-                              </button>
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
+                              </svg>
+                              <span className="text-gray-400 text-xs">
+                                Checking...
+                              </span>
                             </div>
-                            <div className="h-64 w-full">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={chartData}>
-                                  <CartesianGrid
-                                    strokeDasharray="3 3"
-                                    stroke="#374151"
-                                  />
-                                  <XAxis
-                                    dataKey="date"
-                                    stroke="#9CA3AF"
-                                    style={{ fontSize: "12px" }}
-                                  />
-                                  <YAxis
-                                    stroke="#9CA3AF"
-                                    style={{ fontSize: "12px" }}
-                                    reversed
-                                    domain={["dataMin - 5", "dataMax + 5"]}
-                                  />
-                                  <Tooltip
-                                    contentStyle={{
-                                      backgroundColor: "#1C1C1E",
-                                      border: "1px solid #374151",
-                                      borderRadius: "8px",
-                                      color: "#fff",
+                          ) : keyword.position ? (
+                            <div className="flex items-center justify-end gap-1">
+                              <span className="text-white font-semibold">
+                                #{keyword.position}
+                              </span>
+                              {keyword.positionChange !== undefined &&
+                                keyword.positionChange !== 0 && (
+                                  <span
+                                    className={`text-xs font-medium ${
+                                      keyword.positionChange > 0
+                                        ? "text-green-400"
+                                        : "text-red-400"
+                                    }`}
+                                  >
+                                    {keyword.positionChange > 0 ? "↑" : "↓"}
+                                    {Math.abs(keyword.positionChange)}
+                                  </span>
+                                )}
+                              {keyword.history &&
+                                keyword.history.length > 1 && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setHoveredKeyword(
+                                        hoveredKeyword === keyword.id
+                                          ? null
+                                          : keyword.id
+                                      );
                                     }}
-                                  />
-                                  <Line
-                                    type="monotone"
-                                    dataKey="position"
-                                    stroke="#f97316"
-                                    strokeWidth={2}
-                                    dot={{ fill: "#f97316", r: 4 }}
-                                    activeDot={{ r: 6 }}
-                                  />
-                                </LineChart>
-                              </ResponsiveContainer>
+                                    className="ml-2 text-gray-400 hover:text-orange-400 transition-colors"
+                                    title="View position history"
+                                  >
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                      />
+                                    </svg>
+                                  </button>
+                                )}
                             </div>
-                          </td>
-                        </tr>
-                      );
-                    })()}
-                  {/* Fill remaining rows with empty rows to fill the table */}
-                  {Array.from({
-                    length: Math.max(
-                      0,
-                      KEYWORD_CONFIG.MIN_TABLE_ROWS - trackedKeywords.length
-                    ),
-                  }).map((_, idx) => (
-                    <tr
-                      key={`empty-fill-${idx}`}
-                      className={`border-b border-gray-800 ${
-                        (trackedKeywords.length + idx) % 2 === 0
-                          ? "bg-gray-800/10"
-                          : "bg-gray-800/5"
-                      }`}
-                    >
-                      <td className="py-4 px-4">
-                        <div className="h-4 bg-gray-800/30 rounded w-32"></div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="h-4 bg-gray-800/30 rounded w-16"></div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="h-4 bg-gray-800/30 rounded w-24"></div>
-                      </td>
-                      <td className="py-4 px-4 text-right">
-                        <div className="h-4 bg-gray-800/30 rounded w-16 ml-auto"></div>
-                      </td>
-                      <td className="py-4 px-4 text-right">
-                        <div className="h-4 bg-gray-800/30 rounded w-16 ml-auto"></div>
-                      </td>
-                      <td className="py-4 px-4 text-right">
-                        <div className="h-4 bg-gray-800/30 rounded w-16 ml-auto"></div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="h-4 bg-gray-800/30 rounded w-32"></div>
-                      </td>
-                    </tr>
-                  ))}
-                </>
-              )}
-            </tbody>
-          </table>
+                          ) : keyword.lastChecked ? (
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-gray-500 text-sm">
+                                Not in top 25
+                              </span>
+                              <span className="text-gray-600 text-xs">
+                                Click to check
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-gray-500 text-sm">—</span>
+                              <span className="text-gray-600 text-xs">
+                                Click to check
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-4 px-4">
+                          {keyword.appsInRanking &&
+                          keyword.appsInRanking.length > 0 ? (
+                            <div className="flex items-center gap-1">
+                              {keyword.appsInRanking.slice(0, 3).map((app) => (
+                                <img
+                                  key={app.id}
+                                  src={app.icon}
+                                  alt={app.name}
+                                  className="w-6 h-6 rounded-lg cursor-pointer hover:ring-2 hover:ring-orange-500 transition-all"
+                                  title={`${app.name} - Click to extract keywords`}
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (!selectedApp) return;
+                                    setSelectedCompetitorApp({
+                                      ...app,
+                                      id: app.id,
+                                    } as App);
+                                    setShowCompetitorKeywordsModal(true);
+                                    try {
+                                      // Fetch full app details first
+                                      const fullApp = await getAppDetails(
+                                        "",
+                                        app.id
+                                      );
+                                      const keywords =
+                                        await extractCompetitorKeywords(
+                                          fullApp,
+                                          selectedCountry
+                                        );
+                                      setCompetitorKeywords(keywords);
+                                    } catch (error) {
+                                      console.error(
+                                        "Error extracting competitor keywords:",
+                                        error
+                                      );
+                                      setCompetitorKeywords([]);
+                                    }
+                                  }}
+                                />
+                              ))}
+                              {keyword.totalAppsInRanking &&
+                                keyword.totalAppsInRanking > 3 && (
+                                  <span className="text-gray-400 text-xs ml-1">
+                                    +{keyword.totalAppsInRanking - 3}
+                                  </span>
+                                )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-500 text-sm">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {/* Historical Chart Modal for selected keyword */}
+                    {hoveredKeyword &&
+                      (() => {
+                        const keyword = trackedKeywords.find(
+                          (k) => k.id === hoveredKeyword
+                        );
+                        if (
+                          !keyword ||
+                          !keyword.history ||
+                          keyword.history.length < 2
+                        )
+                          return null;
+
+                        const chartData = keyword.history
+                          .slice(-KEYWORD_CONFIG.HISTORY_RETENTION_DAYS) // Last N data points
+                          .map((h) => ({
+                            date: new Date(h.date).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            }),
+                            position: h.position,
+                            popularity: h.popularity,
+                            difficulty: h.difficulty,
+                          }));
+
+                        return (
+                          <tr key={`chart-${hoveredKeyword}`}>
+                            <td
+                              colSpan={7}
+                              className="p-6 bg-[#1C1C1E] border-b border-gray-800"
+                            >
+                              <div className="mb-2 flex items-center justify-between">
+                                <h3 className="text-white font-semibold">
+                                  Position History: {keyword.keyword}
+                                </h3>
+                                <button
+                                  onClick={() => setHoveredKeyword(null)}
+                                  className="text-gray-400 hover:text-white"
+                                >
+                                  <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M6 18L18 6M6 6l12 12"
+                                    />
+                                  </svg>
+                                </button>
+                              </div>
+                              <div className="h-64 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={chartData}>
+                                    <CartesianGrid
+                                      strokeDasharray="3 3"
+                                      stroke="#374151"
+                                    />
+                                    <XAxis
+                                      dataKey="date"
+                                      stroke="#9CA3AF"
+                                      style={{ fontSize: "12px" }}
+                                    />
+                                    <YAxis
+                                      stroke="#9CA3AF"
+                                      style={{ fontSize: "12px" }}
+                                      reversed
+                                      domain={["dataMin - 5", "dataMax + 5"]}
+                                    />
+                                    <Tooltip
+                                      contentStyle={{
+                                        backgroundColor: "#1C1C1E",
+                                        border: "1px solid #374151",
+                                        borderRadius: "8px",
+                                        color: "#fff",
+                                      }}
+                                    />
+                                    <Line
+                                      type="monotone"
+                                      dataKey="position"
+                                      stroke="#f97316"
+                                      strokeWidth={2}
+                                      dot={{ fill: "#f97316", r: 4 }}
+                                      activeDot={{ r: 6 }}
+                                    />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })()}
+                    {/* Fill remaining rows with empty rows to fill the table */}
+                    {Array.from({
+                      length: Math.max(
+                        0,
+                        KEYWORD_CONFIG.MIN_TABLE_ROWS - trackedKeywords.length
+                      ),
+                    }).map((_, idx) => (
+                      <tr
+                        key={`empty-fill-${idx}`}
+                        className={`border-b border-gray-800 ${
+                          (trackedKeywords.length + idx) % 2 === 0
+                            ? "bg-gray-800/10"
+                            : "bg-gray-800/5"
+                        }`}
+                      >
+                        <td className="py-4 px-4">
+                          <div className="h-4 bg-gray-800/30 rounded w-32"></div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="h-4 bg-gray-800/30 rounded w-16"></div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="h-4 bg-gray-800/30 rounded w-24"></div>
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <div className="h-4 bg-gray-800/30 rounded w-16 ml-auto"></div>
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <div className="h-4 bg-gray-800/30 rounded w-16 ml-auto"></div>
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <div className="h-4 bg-gray-800/30 rounded w-16 ml-auto"></div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="h-4 bg-gray-800/30 rounded w-32"></div>
+                        </td>
+                      </tr>
+                    ))}
+                  </>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -5184,134 +5217,138 @@ const KeywordsView: React.FC<{
             </div>
 
             {/* Keywords List */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <table className="w-full">
-                <thead className="sticky top-0 bg-[#1C1C1E] z-10">
-                  <tr className="border-b border-gray-800">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                      <input
-                        type="checkbox"
-                        checked={
-                          selectedSuggestions.size ===
-                            discoveredKeywords.length &&
-                          discoveredKeywords.length > 0
-                        }
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedSuggestions(
-                              new Set(discoveredKeywords.map((k) => k.keyword))
-                            );
-                          } else {
-                            setSelectedSuggestions(new Set());
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[600px]">
+                  <thead className="sticky top-0 bg-[#1C1C1E] z-10">
+                    <tr className="border-b border-gray-800">
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                        <input
+                          type="checkbox"
+                          checked={
+                            selectedSuggestions.size ===
+                              discoveredKeywords.length &&
+                            discoveredKeywords.length > 0
                           }
-                        }}
-                        className="rounded border-gray-600 text-orange-600 focus:ring-orange-500"
-                      />
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                      Suggestion
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                      Popularity
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                      Difficulty
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                      Position
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                      Apps Count
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {discoveredKeywords
-                    .filter((kw) =>
-                      suggestionSearchQuery
-                        ? kw.keyword
-                            .toLowerCase()
-                            .includes(suggestionSearchQuery.toLowerCase())
-                        : true
-                    )
-                    .map((kw) => (
-                      <tr
-                        key={kw.keyword}
-                        className="border-b border-gray-800 hover:bg-gray-800/30"
-                      >
-                        <td className="py-3 px-4">
-                          <input
-                            type="checkbox"
-                            checked={selectedSuggestions.has(kw.keyword)}
-                            onChange={(e) => {
-                              const newSet = new Set(selectedSuggestions);
-                              if (e.target.checked) {
-                                newSet.add(kw.keyword);
-                              } else {
-                                newSet.delete(kw.keyword);
-                              }
-                              setSelectedSuggestions(newSet);
-                            }}
-                            className="rounded border-gray-600 text-orange-600 focus:ring-orange-500"
-                          />
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-white font-medium">
-                            {kw.keyword}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-white text-sm w-8">
-                              {kw.popularity}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedSuggestions(
+                                new Set(
+                                  discoveredKeywords.map((k) => k.keyword)
+                                )
+                              );
+                            } else {
+                              setSelectedSuggestions(new Set());
+                            }
+                          }}
+                          className="rounded border-gray-600 text-orange-600 focus:ring-orange-500"
+                        />
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                        Suggestion
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                        Popularity
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                        Difficulty
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                        Position
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                        Apps Count
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {discoveredKeywords
+                      .filter((kw) =>
+                        suggestionSearchQuery
+                          ? kw.keyword
+                              .toLowerCase()
+                              .includes(suggestionSearchQuery.toLowerCase())
+                          : true
+                      )
+                      .map((kw) => (
+                        <tr
+                          key={kw.keyword}
+                          className="border-b border-gray-800 hover:bg-gray-800/30"
+                        >
+                          <td className="py-3 px-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedSuggestions.has(kw.keyword)}
+                              onChange={(e) => {
+                                const newSet = new Set(selectedSuggestions);
+                                if (e.target.checked) {
+                                  newSet.add(kw.keyword);
+                                } else {
+                                  newSet.delete(kw.keyword);
+                                }
+                                setSelectedSuggestions(newSet);
+                              }}
+                              className="rounded border-gray-600 text-orange-600 focus:ring-orange-500"
+                            />
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-white font-medium">
+                              {kw.keyword}
                             </span>
-                            <div className="w-24 h-2 bg-gray-800 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full ${
-                                  kw.popularity < 30
-                                    ? "bg-red-500"
-                                    : kw.popularity < 60
-                                    ? "bg-yellow-500"
-                                    : "bg-green-500"
-                                }`}
-                                style={{ width: `${kw.popularity}%` }}
-                              />
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white text-sm w-8">
+                                {kw.popularity}
+                              </span>
+                              <div className="w-24 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${
+                                    kw.popularity < 30
+                                      ? "bg-red-500"
+                                      : kw.popularity < 60
+                                      ? "bg-yellow-500"
+                                      : "bg-green-500"
+                                  }`}
+                                  style={{ width: `${kw.popularity}%` }}
+                                />
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-white text-sm w-8">
-                              {kw.difficulty}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white text-sm w-8">
+                                {kw.difficulty}
+                              </span>
+                              <div className="w-24 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${
+                                    kw.difficulty < 30
+                                      ? "bg-green-500"
+                                      : kw.difficulty < 70
+                                      ? "bg-yellow-500"
+                                      : "bg-red-500"
+                                  }`}
+                                  style={{ width: `${kw.difficulty}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-white font-semibold">
+                              #{kw.position}
                             </span>
-                            <div className="w-24 h-2 bg-gray-800 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full ${
-                                  kw.difficulty < 30
-                                    ? "bg-green-500"
-                                    : kw.difficulty < 70
-                                    ? "bg-yellow-500"
-                                    : "bg-red-500"
-                                }`}
-                                style={{ width: `${kw.difficulty}%` }}
-                              />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-white font-semibold">
-                            #{kw.position}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-gray-400 text-sm">
-                            {kw.totalAppsInRanking}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-gray-400 text-sm">
+                              {kw.totalAppsInRanking}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Footer */}
@@ -5410,99 +5447,101 @@ const KeywordsView: React.FC<{
             </div>
 
             {/* Keywords List */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4">
               {competitorKeywords.length > 0 ? (
-                <table className="w-full">
-                  <thead className="sticky top-0 bg-[#1C1C1E] z-10">
-                    <tr className="border-b border-gray-800">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                        Keyword
-                      </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                        Position
-                      </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                        Popularity
-                      </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                        Difficulty
-                      </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {competitorKeywords.map((kw) => (
-                      <tr
-                        key={kw.keyword}
-                        className="border-b border-gray-800 hover:bg-gray-800/30"
-                      >
-                        <td className="py-3 px-4">
-                          <span className="text-white font-medium">
-                            {kw.keyword}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-white font-semibold">
-                            #{kw.position}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-white text-sm w-8">
-                              {kw.popularity}
-                            </span>
-                            <div className="w-24 h-2 bg-gray-800 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full ${
-                                  kw.popularity < 30
-                                    ? "bg-red-500"
-                                    : kw.popularity < 60
-                                    ? "bg-yellow-500"
-                                    : "bg-green-500"
-                                }`}
-                                style={{ width: `${kw.popularity}%` }}
-                              />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-white text-sm w-8">
-                              {kw.difficulty}
-                            </span>
-                            <div className="w-24 h-2 bg-gray-800 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full ${
-                                  kw.difficulty < 30
-                                    ? "bg-green-500"
-                                    : kw.difficulty < 70
-                                    ? "bg-yellow-500"
-                                    : "bg-red-500"
-                                }`}
-                                style={{ width: `${kw.difficulty}%` }}
-                              />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <button
-                            onClick={() => {
-                              handleAddKeyword(kw.keyword, "competitor");
-                              setShowCompetitorKeywordsModal(false);
-                              setSelectedCompetitorApp(null);
-                              setCompetitorKeywords([]);
-                            }}
-                            className="px-3 py-1.5 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors"
-                          >
-                            Add
-                          </button>
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[600px]">
+                    <thead className="sticky top-0 bg-[#1C1C1E] z-10">
+                      <tr className="border-b border-gray-800">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                          Keyword
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                          Position
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                          Popularity
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                          Difficulty
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
+                          Action
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {competitorKeywords.map((kw) => (
+                        <tr
+                          key={kw.keyword}
+                          className="border-b border-gray-800 hover:bg-gray-800/30"
+                        >
+                          <td className="py-3 px-4">
+                            <span className="text-white font-medium">
+                              {kw.keyword}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-white font-semibold">
+                              #{kw.position}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white text-sm w-8">
+                                {kw.popularity}
+                              </span>
+                              <div className="w-24 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${
+                                    kw.popularity < 30
+                                      ? "bg-red-500"
+                                      : kw.popularity < 60
+                                      ? "bg-yellow-500"
+                                      : "bg-green-500"
+                                  }`}
+                                  style={{ width: `${kw.popularity}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white text-sm w-8">
+                                {kw.difficulty}
+                              </span>
+                              <div className="w-24 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${
+                                    kw.difficulty < 30
+                                      ? "bg-green-500"
+                                      : kw.difficulty < 70
+                                      ? "bg-yellow-500"
+                                      : "bg-red-500"
+                                  }`}
+                                  style={{ width: `${kw.difficulty}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <button
+                              onClick={() => {
+                                handleAddKeyword(kw.keyword, "competitor");
+                                setShowCompetitorKeywordsModal(false);
+                                setSelectedCompetitorApp(null);
+                                setCompetitorKeywords([]);
+                              }}
+                              className="px-3 py-1.5 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors"
+                            >
+                              Add
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
                 <div className="text-center py-16">
                   <div className="mb-4">
