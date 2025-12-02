@@ -101,7 +101,7 @@ export async function sendLicenseKey(email, licenseKey, plan = "yearly") {
                 <li>✅ Unlimited Usage</li>
               </ul>
               
-              <p>If you have any questions, just reply to this email.</p>
+              <p>If you have any questions, please contact us at <a href="mailto:support@betterapp.pro" style="color: #f97316;">support@betterapp.pro</a>.</p>
               
               <p>Happy analyzing! 🚀</p>
             </div>

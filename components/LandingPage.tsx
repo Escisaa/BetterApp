@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
 import Logo from "./Logo";
 import InAction from "./InAction";
 import ChatDemo from "./ChatDemo";
@@ -13,10 +15,12 @@ interface LandingPageProps {
 const LandingPage: React.FC<LandingPageProps> = ({
   onGetStarted = () => {},
 }) => {
+  const navigate = useNavigate();
   const [isDark, setIsDark] = useState(true);
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
     // Apply theme to document
@@ -26,6 +30,25 @@ const LandingPage: React.FC<LandingPageProps> = ({
       document.documentElement.classList.remove("dark");
     }
   }, [isDark]);
+
+  // Check if user is signed in
+  useEffect(() => {
+    const checkAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setIsSignedIn(!!session);
+    };
+    checkAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsSignedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Check for success parameter from Stripe redirect
   useEffect(() => {
@@ -115,6 +138,20 @@ const LandingPage: React.FC<LandingPageProps> = ({
             >
               Pricing
             </motion.a>
+            {isSignedIn && (
+              <motion.button
+                onClick={() => navigate("/dashboard")}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  isDark
+                    ? "bg-orange-600 text-white hover:bg-orange-700"
+                    : "bg-orange-600 text-white hover:bg-orange-700"
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Get Started
+              </motion.button>
+            )}
             <motion.button
               onClick={() => setIsDark(!isDark)}
               className={`p-2 rounded-lg ${

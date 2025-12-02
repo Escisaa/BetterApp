@@ -189,47 +189,77 @@ export const checkKeywordRanking = async (
   appsInRanking: App[];
   totalAppsInRanking: number;
 }> => {
-  try {
-    const results = await searchApps(keyword, country);
-    const position = results.findIndex((app) => app.id === appId);
-    const positionNum = position >= 0 ? position + 1 : null;
+  const maxRetries = 3;
+  let lastError = null;
 
-    // Calculate position change
-    let positionChange: number | undefined;
-    if (previousPosition !== undefined && positionNum !== null) {
-      positionChange = previousPosition - positionNum; // Positive = moved up, negative = moved down
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const results = await searchApps(keyword, country);
+      const position = results.findIndex((app) => app.id === appId);
+      const positionNum = position >= 0 ? position + 1 : null;
+
+      // Calculate position change
+      let positionChange: number | undefined;
+      if (previousPosition !== undefined && positionNum !== null) {
+        positionChange = previousPosition - positionNum; // Positive = moved up, negative = moved down
+      }
+
+      // Get top competing apps (excluding the target app)
+      const competingApps = results
+        .filter((app) => app.id !== appId)
+        .slice(0, KEYWORD_CONFIG.MAX_COMPETING_APPS_FOR_DIFFICULTY);
+
+      // Calculate metrics
+      const popularity = calculatePopularity(results.length);
+      const difficulty = calculateDifficulty(competingApps);
+
+      return {
+        position: positionNum,
+        positionChange,
+        popularity: Math.round(popularity),
+        difficulty: Math.round(difficulty),
+        appsInRanking: competingApps.slice(
+          0,
+          KEYWORD_CONFIG.MAX_APPS_IN_RANKING_DISPLAY
+        ),
+        totalAppsInRanking: results.length,
+      };
+    } catch (error: any) {
+      lastError = error;
+      const errorMessage = error?.message || "";
+
+      // If rate limited, retry with exponential backoff
+      if (
+        (errorMessage.includes("429") ||
+          errorMessage.includes("403") ||
+          errorMessage.includes("rate limit") ||
+          errorMessage.includes("Too many requests")) &&
+        attempt < maxRetries - 1
+      ) {
+        const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+        console.warn(
+          `Keyword ranking check rate limited, retrying in ${delay}ms... (attempt ${
+            attempt + 1
+          }/${maxRetries})`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      // If not rate limit, break and return error
+      break;
     }
-
-    // Get top competing apps (excluding the target app)
-    const competingApps = results
-      .filter((app) => app.id !== appId)
-      .slice(0, KEYWORD_CONFIG.MAX_COMPETING_APPS_FOR_DIFFICULTY);
-
-    // Calculate metrics
-    const popularity = calculatePopularity(results.length);
-    const difficulty = calculateDifficulty(competingApps);
-
-    return {
-      position: positionNum,
-      positionChange,
-      popularity: Math.round(popularity),
-      difficulty: Math.round(difficulty),
-      appsInRanking: competingApps.slice(
-        0,
-        KEYWORD_CONFIG.MAX_APPS_IN_RANKING_DISPLAY
-      ),
-      totalAppsInRanking: results.length,
-    };
-  } catch (error) {
-    console.error("Error checking keyword ranking:", error);
-    return {
-      position: null,
-      popularity: 0,
-      difficulty: 0,
-      appsInRanking: [],
-      totalAppsInRanking: 0,
-    };
   }
+
+  // If all retries failed, return empty result
+  console.error("Error checking keyword ranking after retries:", lastError);
+  return {
+    position: null,
+    popularity: 0,
+    difficulty: 0,
+    appsInRanking: [],
+    totalAppsInRanking: 0,
+  };
 };
 
 /**
@@ -295,35 +325,62 @@ export const discoverRankingKeywords = async (
   );
 
   for (const keyword of keywordsToCheck) {
-    try {
-      const results = await searchApps(keyword, country);
-      const position = results.findIndex((a) => a.id === app.id);
+    const maxRetries = 2;
+    let success = false;
 
-      if (position >= 0) {
-        // App ranks for this keyword!
-        const positionNum = position + 1;
-        const competingApps = results
-          .filter((a) => a.id !== app.id)
-          .slice(0, KEYWORD_CONFIG.MAX_COMPETING_APPS_FOR_DIFFICULTY);
-        const popularity = calculatePopularity(results.length);
-        const difficulty = calculateDifficulty(competingApps);
+    for (let attempt = 0; attempt < maxRetries && !success; attempt++) {
+      try {
+        const results = await searchApps(keyword, country);
+        const position = results.findIndex((a) => a.id === app.id);
 
-        discoveredKeywords.push({
-          keyword,
-          position: positionNum,
-          popularity: Math.round(popularity),
-          difficulty: Math.round(difficulty),
-          totalAppsInRanking: results.length,
-        });
+        if (position >= 0) {
+          // App ranks for this keyword!
+          const positionNum = position + 1;
+          const competingApps = results
+            .filter((a) => a.id !== app.id)
+            .slice(0, KEYWORD_CONFIG.MAX_COMPETING_APPS_FOR_DIFFICULTY);
+          const popularity = calculatePopularity(results.length);
+          const difficulty = calculateDifficulty(competingApps);
+
+          discoveredKeywords.push({
+            keyword,
+            position: positionNum,
+            popularity: Math.round(popularity),
+            difficulty: Math.round(difficulty),
+            totalAppsInRanking: results.length,
+          });
+          success = true;
+        } else {
+          success = true; // Not an error, just doesn't rank
+        }
+
+        // Small delay to avoid rate limiting
+        await new Promise((resolve) =>
+          setTimeout(resolve, KEYWORD_CONFIG.DELAY_BETWEEN_KEYWORD_CHECKS)
+        );
+      } catch (error: any) {
+        const errorMessage = error?.message || "";
+
+        // If rate limited, retry with delay
+        if (
+          (errorMessage.includes("429") ||
+            errorMessage.includes("403") ||
+            errorMessage.includes("rate limit") ||
+            errorMessage.includes("Too many requests")) &&
+          attempt < maxRetries - 1
+        ) {
+          const delay = Math.pow(2, attempt) * 2000; // 2s, 4s
+          console.warn(
+            `Rate limited checking keyword "${keyword}", retrying in ${delay}ms...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // If not rate limit or all retries failed, skip this keyword
+        console.error(`Error checking keyword "${keyword}":`, error);
+        success = true; // Mark as done to continue to next keyword
       }
-
-      // Small delay to avoid rate limiting
-      await new Promise((resolve) =>
-        setTimeout(resolve, KEYWORD_CONFIG.DELAY_BETWEEN_KEYWORD_CHECKS)
-      );
-    } catch (error) {
-      console.error(`Error checking keyword "${keyword}":`, error);
-      // Continue with next keyword
     }
   }
 
@@ -382,32 +439,58 @@ export const extractCompetitorKeywords = async (
   );
 
   for (const keyword of keywordsToCheck) {
-    try {
-      const results = await searchApps(keyword, country);
-      const position = results.findIndex((a) => a.id === competitorApp.id);
+    const maxRetries = 2;
+    let success = false;
 
-      if (position >= 0 && position < 50) {
-        // Only include if in top 50
-        const positionNum = position + 1;
-        const competingApps = results
-          .filter((a) => a.id !== competitorApp.id)
-          .slice(0, KEYWORD_CONFIG.MAX_COMPETING_APPS_FOR_DIFFICULTY);
-        const popularity = calculatePopularity(results.length);
-        const difficulty = calculateDifficulty(competingApps);
+    for (let attempt = 0; attempt < maxRetries && !success; attempt++) {
+      try {
+        const results = await searchApps(keyword, country);
+        const position = results.findIndex((a) => a.id === competitorApp.id);
 
-        competitorKeywords.push({
-          keyword,
-          position: positionNum,
-          popularity: Math.round(popularity),
-          difficulty: Math.round(difficulty),
-        });
+        if (position >= 0 && position < 50) {
+          // Only include if in top 50
+          const positionNum = position + 1;
+          const competingApps = results
+            .filter((a) => a.id !== competitorApp.id)
+            .slice(0, KEYWORD_CONFIG.MAX_COMPETING_APPS_FOR_DIFFICULTY);
+          const popularity = calculatePopularity(results.length);
+          const difficulty = calculateDifficulty(competingApps);
+
+          competitorKeywords.push({
+            keyword,
+            position: positionNum,
+            popularity: Math.round(popularity),
+            difficulty: Math.round(difficulty),
+          });
+        }
+        success = true;
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, KEYWORD_CONFIG.DELAY_BETWEEN_KEYWORD_CHECKS)
+        );
+      } catch (error: any) {
+        const errorMessage = error?.message || "";
+
+        // If rate limited, retry with delay
+        if (
+          (errorMessage.includes("429") ||
+            errorMessage.includes("403") ||
+            errorMessage.includes("rate limit") ||
+            errorMessage.includes("Too many requests")) &&
+          attempt < maxRetries - 1
+        ) {
+          const delay = Math.pow(2, attempt) * 2000; // 2s, 4s
+          console.warn(
+            `Rate limited checking competitor keyword "${keyword}", retrying in ${delay}ms...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // If not rate limit or all retries failed, skip this keyword
+        console.error(`Error checking competitor keyword "${keyword}":`, error);
+        success = true; // Mark as done to continue to next keyword
       }
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, KEYWORD_CONFIG.DELAY_BETWEEN_KEYWORD_CHECKS)
-      );
-    } catch (error) {
-      console.error(`Error checking competitor keyword "${keyword}":`, error);
     }
   }
 

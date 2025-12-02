@@ -79,32 +79,42 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-// Initial state for the bubble apps on the main search screen
+// Initial state for the bubble apps on the main search screen - Updated with latest popular apps
 const initialUiApps = [
-  { id: "1", displayName: "cal.ai", searchTerm: "cal.ai", bg: "bg-orange-500" },
-  { id: "2", displayName: "TikTok", searchTerm: "TikTok", bg: "bg-black" },
-  { id: "3", displayName: "payout", searchTerm: "payout", bg: "bg-blue-500" },
-  { id: "4", displayName: "QUITTR", searchTerm: "QUITTR", bg: "bg-yellow-400" },
   {
-    id: "5",
-    displayName: "Spotify",
-    searchTerm: "Spotify - Music and Podcasts",
+    id: "1",
+    displayName: "ChatGPT",
+    searchTerm: "ChatGPT",
     bg: "bg-green-500",
   },
-  { id: "6", displayName: "Notion", searchTerm: "Notion", bg: "bg-gray-800" },
   {
-    id: "7",
-    displayName: "Headspace",
-    searchTerm: "Headspace",
-    bg: "bg-purple-500",
+    id: "2",
+    displayName: "Instagram",
+    searchTerm: "Instagram",
+    bg: "bg-pink-500",
   },
   {
-    id: "8",
+    id: "3",
+    displayName: "Spotify",
+    searchTerm: "Spotify - Music and Podcasts",
+    bg: "bg-green-600",
+  },
+  { id: "4", displayName: "TikTok", searchTerm: "TikTok", bg: "bg-black" },
+  { id: "5", displayName: "Notion", searchTerm: "Notion", bg: "bg-gray-800" },
+  {
+    id: "6",
+    displayName: "Discord",
+    searchTerm: "Discord",
+    bg: "bg-indigo-500",
+  },
+  {
+    id: "7",
     displayName: "Duolingo",
     searchTerm: "Duolingo",
     bg: "bg-green-400",
   },
-  { id: "9", displayName: "Uber", searchTerm: "Uber", bg: "bg-gray-900" },
+  { id: "8", displayName: "Uber", searchTerm: "Uber", bg: "bg-gray-900" },
+  { id: "9", displayName: "Netflix", searchTerm: "Netflix", bg: "bg-red-600" },
 ].map((app, i) => ({ ...app, angle: 360 - i * (360 / 9), icon: null }));
 
 // Sub-components defined outside to prevent re-creation on re-renders
@@ -899,6 +909,7 @@ const LoadingPlaceholder: React.FC<{ text: string }> = ({ text }) => (
 );
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [view, setView] = useState<"search" | "analysis" | "keywords">(
     "search"
   );
@@ -1418,25 +1429,30 @@ ${analysisResult.marketOpportunities}
 
   if (view === "search") {
     const tabs = [
-      {
-        id: "license",
-        label: "License",
-        icon: (
-          <svg
-            className="w-5 h-5 text-blue-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-            />
-          </svg>
-        ),
-      },
+      // Only show License tab if user doesn't have a license
+      ...(!hasLicense
+        ? [
+            {
+              id: "license",
+              label: "License",
+              icon: (
+                <svg
+                  className="w-5 h-5 text-blue-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                  />
+                </svg>
+              ),
+            },
+          ]
+        : []),
       {
         id: "tracked",
         label: "Tracked Apps",
@@ -3464,7 +3480,7 @@ ${analysisResult.marketOpportunities}
                         <button
                           onClick={() => {
                             setShowLicenseModal(false);
-                            // Always navigate to landing page pricing section
+                            // Navigate to pricing page - use window.location to maintain session
                             window.location.href = "/#pricing";
                           }}
                           className="flex-1 bg-transparent border-2 border-orange-500 text-orange-400 font-semibold px-4 py-3 rounded-lg hover:bg-orange-500/10 transition-colors flex items-center justify-center gap-2"
@@ -4095,7 +4111,16 @@ const KeywordsView: React.FC<{
                   - {selectedApp.name}
                 </span>
               )}
-              <button className="text-gray-400 hover:text-white">
+              <button
+                onClick={() => {
+                  const modal = document.getElementById("aso-help-modal");
+                  if (modal) {
+                    (modal as any).showModal();
+                  }
+                }}
+                className="text-gray-400 hover:text-orange-400 transition-colors"
+                title="How ASO Keyword Tracking Works"
+              >
                 <svg
                   className="w-4 h-4"
                   fill="none"
@@ -4106,7 +4131,7 @@ const KeywordsView: React.FC<{
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
               </button>
@@ -4230,6 +4255,112 @@ const KeywordsView: React.FC<{
           </div>
         </div>
       </div>
+
+      {/* ASO Help Modal */}
+      <dialog id="aso-help-modal" className="modal">
+        <div className="modal-box bg-[#1C1C1E] border border-gray-800 max-w-2xl">
+          <form method="dialog">
+            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 text-gray-400 hover:text-white">
+              ✕
+            </button>
+          </form>
+          <h3 className="text-2xl font-bold text-white mb-4">
+            How ASO Keyword Tracking Works
+          </h3>
+          <div className="space-y-4 text-gray-300">
+            <div>
+              <h4 className="text-lg font-semibold text-white mb-2">
+                What is ASO Keyword Tracking?
+              </h4>
+              <p className="text-sm">
+                ASO (App Store Optimization) keyword tracking helps you monitor
+                your app's ranking position for specific keywords in the App
+                Store. This helps you understand which keywords drive visibility
+                and discoverability for your app.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold text-white mb-2">
+                How to Use This Feature:
+              </h4>
+              <ol className="list-decimal list-inside space-y-2 text-sm">
+                <li>
+                  <strong>Add Keywords:</strong> Click "Add Keywords +" to
+                  manually add keywords you want to track, or use "Found X
+                  Suggestions" to discover keywords your app already ranks for.
+                </li>
+                <li>
+                  <strong>Check Rankings:</strong> Click on any keyword row to
+                  check its current ranking position. The system searches the
+                  App Store and finds where your app appears.
+                </li>
+                <li>
+                  <strong>Monitor Metrics:</strong>
+                  <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                    <li>
+                      <strong>Position:</strong> Your app's rank (1-25). If
+                      blank, your app doesn't rank in top 25 for this keyword.
+                    </li>
+                    <li>
+                      <strong>Popularity:</strong> Estimated search volume
+                      (0-100). Higher = more people search for this keyword.
+                    </li>
+                    <li>
+                      <strong>Difficulty:</strong> How hard it is to rank
+                      (0-100). Higher = more competition from established apps.
+                    </li>
+                    <li>
+                      <strong>Apps in Ranking:</strong> Competitors ranking for
+                      the same keyword.
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  <strong>Track Competitors:</strong> Click on competitor app
+                  icons to extract keywords they rank for, then add those
+                  keywords to track your own ranking.
+                </li>
+              </ol>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold text-white mb-2">
+                Why Position Might Be Empty:
+              </h4>
+              <p className="text-sm">
+                If a keyword shows no position, it means your app doesn't
+                currently rank in the top 25 results for that keyword in the App
+                Store. This is normal for new keywords or highly competitive
+                terms. Focus on keywords where you do rank, or use "Found X
+                Suggestions" to discover keywords you already rank for.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold text-white mb-2">
+                Best Practices:
+              </h4>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Track 10-20 relevant keywords per app</li>
+                <li>
+                  Focus on keywords with medium popularity (30-70) and
+                  low-medium difficulty (0-50)
+                </li>
+                <li>Check rankings weekly to track improvements</li>
+                <li>
+                  Use competitor keyword extraction to discover new
+                  opportunities
+                </li>
+                <li>
+                  Update your app's metadata (name, subtitle, description) to
+                  improve rankings
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
 
       {/* Content - Table View */}
       <div className="flex-1 overflow-y-auto min-h-0">
@@ -4488,37 +4619,52 @@ const KeywordsView: React.FC<{
             </thead>
             <tbody>
               {trackedKeywords.length === 0 ? (
-                // Empty state - show empty rows like Astro
-                Array.from({ length: 20 }).map((_, idx) => (
-                  <tr
-                    key={`empty-${idx}`}
-                    className={`border-b border-gray-800 ${
-                      idx % 2 === 0 ? "bg-gray-800/20" : "bg-gray-800/10"
-                    }`}
-                  >
-                    <td className="py-4 px-4">
-                      <div className="h-4 bg-gray-800/50 rounded w-32"></div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="h-4 bg-gray-800/50 rounded w-16"></div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="h-4 bg-gray-800/50 rounded w-24"></div>
-                    </td>
-                    <td className="py-4 px-4 text-right">
-                      <div className="h-4 bg-gray-800/50 rounded w-16 ml-auto"></div>
-                    </td>
-                    <td className="py-4 px-4 text-right">
-                      <div className="h-4 bg-gray-800/50 rounded w-16 ml-auto"></div>
-                    </td>
-                    <td className="py-4 px-4 text-right">
-                      <div className="h-4 bg-gray-800/50 rounded w-16 ml-auto"></div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="h-4 bg-gray-800/50 rounded w-32"></div>
-                    </td>
-                  </tr>
-                ))
+                // Empty state with helpful message
+                <tr>
+                  <td colSpan={7} className="py-16 text-center">
+                    <div className="max-w-md mx-auto">
+                      <svg
+                        className="w-16 h-16 text-gray-600 mx-auto mb-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                        />
+                      </svg>
+                      <h3 className="text-lg font-semibold text-white mb-2">
+                        No Keywords Tracked Yet
+                      </h3>
+                      <p className="text-gray-400 text-sm mb-4">
+                        Start tracking keywords to monitor your app's App Store
+                        rankings and discoverability.
+                      </p>
+                      <div className="space-y-2 text-left max-w-sm mx-auto">
+                        <p className="text-gray-500 text-xs">
+                          <strong className="text-gray-300">
+                            Quick Start:
+                          </strong>
+                        </p>
+                        <ol className="list-decimal list-inside space-y-1 text-xs text-gray-400">
+                          <li>
+                            Click "Add Keywords +" to manually add keywords
+                          </li>
+                          <li>
+                            Or click "Found X Suggestions" to discover keywords
+                            your app already ranks for
+                          </li>
+                          <li>
+                            Click any keyword row to check its ranking position
+                          </li>
+                        </ol>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
               ) : (
                 <>
                   {trackedKeywords.map((keyword, idx) => (
@@ -4674,7 +4820,32 @@ const KeywordsView: React.FC<{
                         )}
                       </td>
                       <td className="py-4 px-4 text-right">
-                        {keyword.position ? (
+                        {isCheckingRanking === keyword.id ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <svg
+                              className="animate-spin h-4 w-4 text-orange-400"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              />
+                            </svg>
+                            <span className="text-gray-400 text-xs">
+                              Checking...
+                            </span>
+                          </div>
+                        ) : keyword.position ? (
                           <div className="flex items-center justify-end gap-1">
                             <span className="text-white font-semibold">
                               #{keyword.position}
@@ -4721,8 +4892,22 @@ const KeywordsView: React.FC<{
                               </button>
                             )}
                           </div>
+                        ) : keyword.lastChecked ? (
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-gray-500 text-sm">
+                              Not in top 25
+                            </span>
+                            <span className="text-gray-600 text-xs">
+                              Click to check
+                            </span>
+                          </div>
                         ) : (
-                          <span className="text-gray-500 text-sm">—</span>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-gray-500 text-sm">—</span>
+                            <span className="text-gray-600 text-xs">
+                              Click to check
+                            </span>
+                          </div>
                         )}
                       </td>
                       <td className="py-4 px-4">
@@ -5320,8 +5505,28 @@ const KeywordsView: React.FC<{
                 </table>
               ) : (
                 <div className="text-center py-16">
-                  <p className="text-gray-400">
+                  <div className="mb-4">
+                    <svg
+                      className="w-16 h-16 text-gray-600 mx-auto"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-gray-400 text-lg mb-2">
                     No keywords found for this competitor
+                  </p>
+                  <p className="text-gray-500 text-sm max-w-md mx-auto">
+                    This app may not rank in the top 25 for the keywords we
+                    checked, or the keywords couldn't be extracted from their
+                    metadata. Try checking a more popular competitor app.
                   </p>
                 </div>
               )}

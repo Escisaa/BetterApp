@@ -7,7 +7,16 @@ function getAI() {
   if (!ai) {
     const API_KEY = process.env.GEMINI_API_KEY;
     if (!API_KEY) {
-      throw new Error("GEMINI_API_KEY environment variable not set");
+      console.error("GEMINI_API_KEY not found in environment variables");
+      console.error(
+        "Available env vars:",
+        Object.keys(process.env).filter(
+          (k) => k.includes("GEMINI") || k.includes("API")
+        )
+      );
+      throw new Error(
+        "GEMINI_API_KEY environment variable not set. Please check Render environment variables."
+      );
     }
     ai = new GoogleGenAI({ apiKey: API_KEY });
   }

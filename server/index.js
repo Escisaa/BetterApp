@@ -216,36 +216,77 @@ app.get("/api/search", async (req, res) => {
       searchTerm
     )}&entity=software&country=${country}&limit=25`;
 
-    const response = await axios.get(url, {
-      timeout: 10000,
-    });
+    // Retry logic for rate limiting (429, 403)
+    const maxRetries = 3;
+    let lastError = null;
 
-    if (!response.data.results) {
-      return res.json({ results: [] });
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const response = await axios.get(url, {
+          timeout: 10000,
+        });
+
+        if (!response.data.results) {
+          return res.json({ results: [] });
+        }
+
+        const apps = response.data.results.map((item) => ({
+          id: item.trackId.toString(),
+          name: item.trackName,
+          developer: item.artistName,
+          icon:
+            item.artworkUrl100?.replace("100x100", "256x256") ||
+            item.artworkUrl100,
+          rating: parseFloat(item.averageUserRating) || 0,
+          reviewsCount: formatCount(item.userRatingCount || 0),
+          releaseDate: new Date(item.releaseDate).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          }),
+          screenshots: [],
+          downloads: "N/A",
+          revenue: "N/A",
+          reviews: [],
+        }));
+
+        return res.json({ results: apps });
+      } catch (error) {
+        lastError = error;
+        const status = error.response?.status || error.code;
+
+        // If rate limited (429) or forbidden (403), retry with exponential backoff
+        if ((status === 429 || status === 403) && attempt < maxRetries - 1) {
+          const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+          console.warn(
+            `iTunes API rate limited (${status}), retrying in ${delay}ms... (attempt ${
+              attempt + 1
+            }/${maxRetries})`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // If not rate limit error, throw immediately
+        throw error;
+      }
     }
 
-    const apps = response.data.results.map((item) => ({
-      id: item.trackId.toString(),
-      name: item.trackName,
-      developer: item.artistName,
-      icon:
-        item.artworkUrl100?.replace("100x100", "256x256") || item.artworkUrl100,
-      rating: parseFloat(item.averageUserRating) || 0,
-      reviewsCount: formatCount(item.userRatingCount || 0),
-      releaseDate: new Date(item.releaseDate).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      }),
-      screenshots: [],
-      downloads: "N/A",
-      revenue: "N/A",
-      reviews: [],
-    }));
-
-    res.json({ results: apps });
+    // If all retries failed
+    throw lastError;
   } catch (error) {
-    console.error("Error searching apps:", error.message);
+    const status = error.response?.status || error.code;
+    console.error("Error searching apps:", error.message, `Status: ${status}`);
+
+    if (status === 429 || status === 403) {
+      return res.status(503).json({
+        error:
+          "iTunes API rate limit reached. Please try again in a few moments.",
+        message:
+          "The App Store search is temporarily unavailable due to rate limiting.",
+      });
+    }
+
     res.status(500).json({
       error: "Failed to search apps",
       message: error.message,
@@ -743,13 +784,29 @@ app.post("/api/ai/analyze", strictLimiter, async (req, res) => {
         .status(400)
         .json({ error: "appName and reviews array required" });
     }
+
+    // Check if GEMINI_API_KEY is configured
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY not configured");
+      return res.status(500).json({
+        error: "AI service is not configured. Please contact support.",
+      });
+    }
+
     const result = await analyzeReviewsWithAI(appName, reviews);
     res.json(result);
   } catch (error) {
     console.error("Error in analyze endpoint:", error);
-    res
-      .status(500)
-      .json({ error: error.message || "Failed to analyze reviews" });
+    const errorMessage = error.message || "Failed to analyze reviews";
+
+    // Provide more helpful error messages
+    if (errorMessage.includes("GEMINI_API_KEY")) {
+      return res.status(500).json({
+        error: "AI service is not configured. Please contact support.",
+      });
+    }
+
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -783,13 +840,29 @@ app.post("/api/ai/chat", strictLimiter, async (req, res) => {
     if (!appName || !message) {
       return res.status(400).json({ error: "appName and message required" });
     }
+
+    // Check if GEMINI_API_KEY is configured
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY not configured");
+      return res.status(500).json({
+        error: "AI service is not configured. Please contact support.",
+      });
+    }
+
     const response = await chatWithAI(appName, chatHistory || [], message);
     res.json({ response });
   } catch (error) {
     console.error("Error in chat endpoint:", error);
-    res
-      .status(500)
-      .json({ error: error.message || "Failed to get chat response" });
+    const errorMessage = error.message || "Failed to get chat response";
+
+    // Provide more helpful error messages
+    if (errorMessage.includes("GEMINI_API_KEY")) {
+      return res.status(500).json({
+        error: "AI service is not configured. Please contact support.",
+      });
+    }
+
+    res.status(500).json({ error: errorMessage });
   }
 });
 
