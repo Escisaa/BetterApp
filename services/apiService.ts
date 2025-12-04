@@ -23,7 +23,7 @@ const getApiBaseUrl = (): string => {
   return "http://localhost:3002";
 };
 
-const API_BASE_URL = getApiBaseUrl();
+export const API_BASE_URL = getApiBaseUrl();
 
 export interface AppIconData {
   name: string;

@@ -40,46 +40,58 @@ const analysisSchema = {
     summary: {
       type: Type.STRING,
       description:
-        "A 2-3 sentence summary of the overall user sentiment and key takeaways from the reviews.",
+        "A compelling 3-4 sentence executive summary covering: (1) Overall sentiment percentage (positive/negative), (2) The single biggest strength mentioned, (3) The critical weakness most users complain about, (4) One surprising insight competitors could exploit.",
     },
     commonComplaints: {
       type: Type.ARRAY,
       description:
-        "A list of the most frequent complaints or issues users have with the app.",
+        "Top 6-8 specific complaints with frequency indicators. Format each as: '[HIGH/MEDIUM frequency] Specific issue - exact user quote or paraphrase'. Example: '[HIGH] App crashes on iOS 17 - Multiple users report crashes when opening settings'",
       items: { type: Type.STRING },
     },
     featureRequests: {
       type: Type.ARRAY,
-      description: "A list of features that users are commonly requesting.",
+      description:
+        "6-8 specific features users are begging for. Include the potential impact. Format: 'Feature name: Description - Why users want this (e.g., 5+ users mentioned this)'",
       items: { type: Type.STRING },
     },
     monetization: {
       type: Type.STRING,
       description:
-        "Analyze the reviews for any mentions of pricing, subscriptions, or ads to infer the app's monetization strategy and user sentiment towards it.",
+        "Detailed monetization analysis: (1) Current model (free/freemium/paid/subscription), (2) User sentiment about pricing (use percentages if possible), (3) Specific pricing complaints, (4) What price point users seem willing to pay, (5) Opportunity for alternative monetization.",
     },
     marketOpportunities: {
       type: Type.STRING,
       description:
-        "Based on the complaints and feature requests, identify potential market gaps or opportunities for a new or improved app. Be specific and actionable.",
+        "3-4 specific, actionable market opportunities based on gaps. Format: 'OPPORTUNITY 1: [Name] - Build [specific feature] because [evidence from reviews]. Target audience: [who]. Potential advantage: [why this beats the competitor].'",
     },
     likes: {
       type: Type.ARRAY,
       description:
-        "A list of 5-8 things users like about the app, extracted from positive reviews. Be specific and concise (one sentence each).",
+        "6-8 specific things users LOVE. Include why it matters competitively. Format: 'Feature/aspect - Why users love it and how often mentioned'",
       items: { type: Type.STRING },
     },
     dislikes: {
       type: Type.ARRAY,
       description:
-        "A list of 5-8 things users dislike about the app, extracted from negative reviews. Be specific and concise (one sentence each).",
+        "6-8 specific pain points. Include severity level. Format: '[CRITICAL/MAJOR/MINOR] Issue - Specific description and impact on user experience'",
       items: { type: Type.STRING },
     },
     suggestions: {
       type: Type.ARRAY,
       description:
-        "A list of 5-8 actionable suggestions for improvement based on user feedback. Be specific and concise (one sentence each).",
+        "8-10 prioritized, actionable suggestions. Format: '[Priority 1-10] Suggestion - Expected impact and implementation difficulty (Easy/Medium/Hard)'",
       items: { type: Type.STRING },
+    },
+    competitorWeaknesses: {
+      type: Type.ARRAY,
+      description:
+        "5-6 specific weaknesses a competitor could exploit to steal users. Format: 'Weakness: Description - How to exploit this to win users'",
+      items: { type: Type.STRING },
+    },
+    userPersonas: {
+      type: Type.STRING,
+      description:
+        "2-3 distinct user personas based on review patterns. For each: Name, Primary use case, Main frustration, What would make them switch to a competitor.",
     },
   },
   required: [
@@ -91,6 +103,8 @@ const analysisSchema = {
     "likes",
     "dislikes",
     "suggestions",
+    "competitorWeaknesses",
+    "userPersonas",
   ],
 };
 
@@ -100,14 +114,40 @@ export async function analyzeReviewsWithAI(appName, reviews) {
       (r) => `Rating: ${r.rating}/5\nTitle: ${r.title}\nReview: ${r.content}`
     )
     .join("\n---\n");
+
+  // Calculate review stats for context
+  const totalReviews = reviews.length;
+  const avgRating =
+    reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews;
+  const positiveReviews = reviews.filter((r) => r.rating >= 4).length;
+  const negativeReviews = reviews.filter((r) => r.rating <= 2).length;
+
   const prompt = `
-    You are a senior product analyst for a top mobile app development studio.
-    Your task is to analyze user reviews for the app "${appName}" and provide actionable insights for product and business decisions.
+    You are a SENIOR COMPETITIVE INTELLIGENCE ANALYST at a top-tier mobile app consultancy. You're known for finding insights others miss.
     
-    Here are the user reviews:
+    Your task: Analyze user reviews for "${appName}" and deliver ACTIONABLE INTELLIGENCE that helps someone build a BETTER competing app.
+    
+    REVIEW STATS:
+    - Total reviews analyzed: ${totalReviews}
+    - Average rating: ${avgRating.toFixed(1)}/5
+    - Positive reviews (4-5 stars): ${positiveReviews} (${Math.round(
+    (positiveReviews / totalReviews) * 100
+  )}%)
+    - Negative reviews (1-2 stars): ${negativeReviews} (${Math.round(
+    (negativeReviews / totalReviews) * 100
+  )}%)
+    
+    USER REVIEWS:
     ${reviewsText}
     
-    Based on these reviews, provide a detailed analysis.
+    ANALYSIS REQUIREMENTS:
+    1. Be SPECIFIC - Quote or paraphrase actual reviews. Don't be generic.
+    2. Be ACTIONABLE - Every insight should help build a better competing app.
+    3. Be QUANTITATIVE - Use numbers and percentages when possible.
+    4. Be CONTRARIAN - Find insights others would miss.
+    5. Think like a FOUNDER - What would make YOU switch to a competitor?
+    
+    Focus on finding the GAPS and OPPORTUNITIES. What are users begging for that this app doesn't provide?
   `;
 
   const maxRetries = 3;
@@ -244,15 +284,24 @@ export async function chatWithAI(appName, chatHistory, newMessage) {
           .join("\n")
       : "";
 
-  const prompt = `You are an expert mobile app analyst. Answer questions about "${appName}" concisely and intelligently.
+  const prompt = `You are a SENIOR APP STORE OPTIMIZATION (ASO) EXPERT and COMPETITIVE INTELLIGENCE ANALYST with 10+ years experience helping apps grow from 0 to millions of users.
 
-IMPORTANT: Keep responses SHORT (2-4 sentences max). Be direct, insightful, and actionable. No fluff or long explanations.
+Your expertise includes: App Store algorithms, keyword optimization, user acquisition, monetization strategies, competitor analysis, user psychology, and mobile app growth hacking.
+
+App being analyzed: "${appName}"
+
+RESPONSE STYLE:
+- Be DIRECT and ACTIONABLE - give specific advice they can implement today
+- Use NUMBERS and METRICS when possible
+- Reference real strategies used by successful apps
+- Keep responses concise (3-5 sentences) but packed with value
+- If you don't know something specific about this app, use your expertise to give general best-practice advice
 
 ${
   historyContext ? `Previous conversation:\n${historyContext}\n\n` : ""
 }User question: "${newMessage}"
 
-Provide a brief, smart answer. Focus on key insights, not lengthy explanations.`;
+Give expert-level advice that a $500/hour consultant would provide. Be specific, not generic.`;
 
   try {
     const response = await getAI().models.generateContent({

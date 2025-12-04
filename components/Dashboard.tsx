@@ -6,6 +6,7 @@ import {
   searchApps,
   getAppDetails,
   fetchAppIcon,
+  API_BASE_URL,
 } from "../services/apiService";
 import {
   analyzeReviewsWithAI,
@@ -385,9 +386,9 @@ const PerformanceCard: React.FC<{
   </div>
 );
 
-const AITags: React.FC<{ tags: string[]; hasLicense?: boolean }> = ({
+const AITags: React.FC<{ tags: string[]; hasAccess?: boolean }> = ({
   tags,
-  hasLicense = true,
+  hasAccess = true,
 }) => {
   // Clean tags: remove markdown (**), numbers, and extra formatting
   const cleanTags = tags
@@ -405,7 +406,7 @@ const AITags: React.FC<{ tags: string[]; hasLicense?: boolean }> = ({
     .filter((tag) => tag.length > 0); // Remove empty tags
 
   // Don't show component if no tags and user has license
-  if (cleanTags.length === 0 && hasLicense) {
+  if (cleanTags.length === 0 && hasAccess) {
     return null;
   }
 
@@ -429,7 +430,7 @@ const AITags: React.FC<{ tags: string[]; hasLicense?: boolean }> = ({
           <h2 className="text-lg font-semibold text-gray-100">
             Relevant AI Tags
           </h2>
-          {!hasLicense && (
+          {!hasAccess && (
             <svg
               className="w-4 h-4 text-gray-500 ml-2"
               fill="none"
@@ -463,7 +464,7 @@ const AITags: React.FC<{ tags: string[]; hasLicense?: boolean }> = ({
       </div>
       <div
         className={`flex flex-wrap gap-2 ${
-          !hasLicense ? "blur-sm pointer-events-none" : ""
+          !hasAccess ? "blur-sm pointer-events-none" : ""
         } relative`}
       >
         {cleanTags.length > 0 ? (
@@ -475,7 +476,7 @@ const AITags: React.FC<{ tags: string[]; hasLicense?: boolean }> = ({
               {tag}
             </div>
           ))
-        ) : !hasLicense ? (
+        ) : !hasAccess ? (
           // Show placeholder tags when no license (so users can see what they're missing)
           <>
             <div className="bg-orange-500/20 text-orange-400 text-sm font-semibold px-4 py-2.5 rounded-lg border border-orange-500/30">
@@ -500,6 +501,17 @@ const AITags: React.FC<{ tags: string[]; hasLicense?: boolean }> = ({
       </div>
     </div>
   );
+};
+
+const formatDate = (value?: string | Date) => {
+  if (!value) return "—";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 };
 
 const ReviewCard: React.FC<{ review: Review }> = ({ review }) => (
@@ -956,6 +968,9 @@ const Dashboard: React.FC = () => {
     success: boolean;
     message?: string;
   } | null>(null);
+  const [isStartingCheckout, setIsStartingCheckout] = useState(false);
+  const [showManualLicenseEntry, setShowManualLicenseEntry] = useState(false);
+  const [licenseCopied, setLicenseCopied] = useState(false);
   const [selectedTrackedApp, setSelectedTrackedApp] =
     useState<TrackedApp | null>(null);
 
@@ -984,13 +999,17 @@ const Dashboard: React.FC = () => {
         if (email) {
           const result = await fetchLicenseForEmail(email);
           if (result?.success && result.license?.licenseKey) {
-            saveLicense(result.license.licenseKey);
-            valid = await checkLicenseStatus();
-            setHasLicense(valid);
-            if (valid) {
-              const details = await getLicenseDetails();
-              setLicenseDetails(details);
-            }
+            const normalizedDetails: LicenseDetails = {
+              licenseKey: result.license.licenseKey,
+              plan: result.license.plan,
+              status: result.license.status,
+              expiresAt: result.license.expiresAt,
+              currentPeriodEnd: result.license.currentPeriodEnd,
+            };
+            saveLicense(normalizedDetails.licenseKey);
+            setHasLicense(true);
+            setLicenseDetails(normalizedDetails);
+            return;
           }
         }
       } catch (error) {
@@ -1336,7 +1355,7 @@ const Dashboard: React.FC = () => {
   };
 
   const handleManageSubscription = async () => {
-    const storedLicense = getStoredLicense();
+    const storedLicense = licenseDetails?.licenseKey || getStoredLicense();
     if (!storedLicense) {
       setLicenseError("No license key found");
       return;
@@ -1380,6 +1399,233 @@ const Dashboard: React.FC = () => {
     } finally {
       setIsResendingLicense(false);
     }
+  };
+
+  const handleStartCheckout = async () => {
+    if (isStartingCheckout) return;
+    setLicenseError("");
+    setIsStartingCheckout(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/stripe/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          successUrl: `${window.location.origin}/dashboard?success=true`,
+          cancelUrl: `${window.location.origin}/dashboard?canceled=true`,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        setLicenseError(
+          errorText || "Failed to start checkout. Please try again."
+        );
+        setIsStartingCheckout(false);
+        return;
+      }
+
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setLicenseError("Failed to start checkout. Please try again.");
+        setIsStartingCheckout(false);
+      }
+    } catch (error: any) {
+      setLicenseError(
+        error?.message || "Failed to start checkout. Please try again."
+      );
+      setIsStartingCheckout(false);
+    }
+  };
+
+  const handleCopyLicenseKey = async () => {
+    if (!licenseDetails?.licenseKey) return;
+    try {
+      await navigator.clipboard.writeText(licenseDetails.licenseKey);
+      setLicenseCopied(true);
+      setTimeout(() => setLicenseCopied(false), 2000);
+    } catch (error) {
+      setLicenseError("Failed to copy license key. Please copy it manually.");
+    }
+  };
+
+  const renderSubscriptionModal = () => {
+    if (!showLicenseModal) return null;
+
+    return (
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setShowLicenseModal(false);
+          }
+        }}
+      >
+        <div
+          className="bg-[#1C1C1E] border border-gray-800 rounded-2xl w-full max-w-xl p-8 relative"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)",
+          }}
+        >
+          <button
+            onClick={() => setShowLicenseModal(false)}
+            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+
+          {hasLicense && licenseDetails ? (
+            <div className="space-y-6">
+              <header>
+                <p className="text-xs uppercase text-gray-400 tracking-wide">
+                  Subscription
+                </p>
+                <h2 className="text-2xl font-bold text-white mt-1">
+                  Access active
+                </h2>
+                <p className="text-gray-400 mt-2 text-sm">
+                  Linked to {resendEmail || "your account"}. Renewal on{" "}
+                  {formatDate(licenseDetails.expiresAt)}.
+                </p>
+              </header>
+              <div className="grid gap-3">
+                <button
+                  onClick={handleManageSubscription}
+                  disabled={isLoadingPortal}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-orange-600 text-white font-semibold hover:bg-orange-700 transition-colors disabled:opacity-50"
+                >
+                  {isLoadingPortal
+                    ? "Opening portal..."
+                    : "Manage subscription"}
+                </button>
+                <button
+                  onClick={handleResendLicense}
+                  disabled={isResendingLicense}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gray-800 text-white font-semibold hover:bg-gray-700 transition-colors disabled:opacity-50"
+                >
+                  {isResendingLicense ? "Sending..." : "Email my license"}
+                </button>
+                <button
+                  onClick={handleCopyLicenseKey}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-gray-700 text-gray-200 font-semibold hover:bg-gray-800 transition-colors"
+                >
+                  Copy license key
+                </button>
+                {licenseCopied && (
+                  <p className="text-xs text-green-400 text-center">
+                    License key copied to clipboard
+                  </p>
+                )}
+                {resendStatus && (
+                  <p
+                    className={`text-xs text-center ${
+                      resendStatus.success ? "text-green-400" : "text-red-400"
+                    }`}
+                  >
+                    {resendStatus.message}
+                  </p>
+                )}
+                {licenseError && (
+                  <p className="text-sm text-red-400 text-center">
+                    {licenseError}
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <header>
+                <p className="text-xs uppercase text-gray-400 tracking-wide">
+                  BetterApp Pro
+                </p>
+                <h2 className="text-2xl font-bold text-white mt-1">
+                  Everything you need to beat competitors
+                </h2>
+                <p className="text-gray-400 mt-2 text-sm">
+                  Unlimited ASO tracking, AI competitor analysis, CSV exports,
+                  and tracked apps for a single annual license.
+                </p>
+              </header>
+              <ul className="space-y-2 text-sm text-gray-300">
+                <li>
+                  • Discover the exact keywords your app already ranks for
+                </li>
+                <li>
+                  • Extract competitor keywords and copy them into your backlog
+                </li>
+                <li>• Run AI chat & analyses on any app without limits</li>
+                <li>• Export reviews, insights, and performance reports</li>
+              </ul>
+              <button
+                onClick={handleStartCheckout}
+                disabled={isStartingCheckout}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-orange-600 text-white font-semibold hover:bg-orange-700 transition-colors disabled:opacity-50"
+              >
+                {isStartingCheckout ? "Redirecting..." : "Start subscription"}
+              </button>
+              <p className="text-xs text-gray-500 text-center">
+                $108/year. One license per Mac. Cancel anytime from the portal.
+              </p>
+              <div className="border-t border-gray-800 pt-4">
+                <button
+                  onClick={() => setShowManualLicenseEntry((prev) => !prev)}
+                  className="text-sm text-gray-300 hover:text-white transition-colors"
+                >
+                  {showManualLicenseEntry
+                    ? "Hide manual entry"
+                    : "Already have a license key?"}
+                </button>
+                {showManualLicenseEntry && (
+                  <div className="mt-4 space-y-3">
+                    <input
+                      type="text"
+                      value={licenseKey}
+                      onChange={(e) => setLicenseKey(e.target.value)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleLicenseSubmit()
+                      }
+                      placeholder="Enter your license key..."
+                      className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                    <button
+                      onClick={handleLicenseSubmit}
+                      disabled={isSubmittingLicense}
+                      className="w-full bg-gray-800 text-white font-semibold px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+                    >
+                      {isSubmittingLicense
+                        ? "Validating..."
+                        : "Activate license"}
+                    </button>
+                    <div className="text-xs text-gray-500">
+                      <p>
+                        Need help? Contact support with your purchase email.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {licenseError && (
+                  <p className="text-sm text-red-400 mt-3">{licenseError}</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   const handleAnalyze = useCallback(async () => {
@@ -1457,30 +1703,6 @@ ${analysisResult.marketOpportunities}
 
   if (view === "search") {
     const tabs = [
-      // Only show License tab if user doesn't have a license
-      ...(!hasLicense
-        ? [
-            {
-              id: "license",
-              label: "License",
-              icon: (
-                <svg
-                  className="w-5 h-5 text-blue-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                  />
-                </svg>
-              ),
-            },
-          ]
-        : []),
       {
         id: "tracked",
         label: "Tracked Apps",
@@ -1540,14 +1762,56 @@ ${analysisResult.marketOpportunities}
               </svg>
               Sign Out
             </button>
+            {hasLicense && licenseDetails ? (
+              <div className="flex items-center gap-3 bg-[#1C1C1E] border border-gray-800 rounded-xl px-4 py-2">
+                <div>
+                  <p className="text-xs uppercase text-gray-500 tracking-wide">
+                    Premium access
+                  </p>
+                  <p className="text-sm font-semibold text-white">
+                    {licenseDetails.plan
+                      ? licenseDetails.plan.toUpperCase()
+                      : "Yearly"}{" "}
+                    · renews {formatDate(licenseDetails.expiresAt)}
+                  </p>
+                </div>
+                <button
+                  onClick={handleManageSubscription}
+                  className="text-sm font-semibold px-3 py-2 rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors disabled:opacity-50"
+                  disabled={isLoadingPortal}
+                >
+                  {isLoadingPortal ? "Opening..." : "Manage"}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setShowLicenseModal(true);
+                  setShowManualLicenseEntry(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg shadow-lg hover:shadow-xl transition-all"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                Upgrade to Pro
+              </button>
+            )}
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => {
-                  if (tab.id === "license") {
-                    setShowLicenseModal(true);
-                    setShowTrackedModal(false);
-                  } else if (tab.id === "tracked") {
+                  if (tab.id === "tracked") {
                     setShowTrackedModal(true);
                     setShowLicenseModal(false);
                   } else if (tab.id === "keywords") {
@@ -1729,20 +1993,21 @@ ${analysisResult.marketOpportunities}
                               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                             </svg>
                             <h3 className="text-xl font-bold text-white mb-2">
-                              Premium Feature
+                              Unlock BetterApp Pro
                             </h3>
                             <p className="text-gray-400 mb-4">
-                              Upgrade to Premium to view detailed performance
-                              tracking, charts, and analytics
+                              Analyze trends, monitor ASO performance, and
+                              export competitor insights once you subscribe.
                             </p>
                             <button
                               onClick={() => {
                                 setShowTrackedModal(false);
+                                setShowManualLicenseEntry(false);
                                 setShowLicenseModal(true);
                               }}
                               className="bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors"
                             >
-                              Get Premium
+                              See Plans
                             </button>
                           </div>
                         </div>
@@ -2207,233 +2472,7 @@ ${analysisResult.marketOpportunities}
           </div>
         )}
 
-        {/* License Modal - Accessible from search view */}
-        {showLicenseModal && (
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setShowLicenseModal(false);
-              }
-            }}
-          >
-            <div
-              className="bg-[#1C1C1E] border border-gray-800 rounded-2xl w-full max-w-md p-8"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)",
-              }}
-            >
-              <button
-                onClick={() => setShowLicenseModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-
-              {/* Large Key Icon */}
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-blue-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                    />
-                  </svg>
-                </div>
-              </div>
-
-              <h2 className="text-2xl font-bold text-white text-center mb-2">
-                Activate Premium
-              </h2>
-              <p className="text-gray-400 text-center mb-6">
-                Get the best from BetterApp
-              </p>
-
-              <div className="mb-4">
-                <label className="text-sm text-gray-400 mb-2 block">
-                  License Key
-                </label>
-                <input
-                  type="text"
-                  value={licenseKey}
-                  onChange={(e) => setLicenseKey(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleLicenseSubmit()}
-                  placeholder="Enter your license key..."
-                  className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-                {licenseError && (
-                  <p className="text-red-400 text-sm mt-2">{licenseError}</p>
-                )}
-              </div>
-
-              <div className="flex gap-3 mb-6">
-                <button
-                  onClick={handleLicenseSubmit}
-                  disabled={isSubmittingLicense}
-                  className="flex-1 bg-orange-600 text-white font-semibold px-4 py-3 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmittingLicense ? (
-                    <>
-                      <svg
-                        className="animate-spin h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      Activating...
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                        />
-                      </svg>
-                      Activate License
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowLicenseModal(false);
-                    // Always navigate to landing page pricing section
-                    window.location.href = "/#pricing";
-                  }}
-                  className="flex-1 bg-transparent border-2 border-orange-500 text-orange-400 font-semibold px-4 py-3 rounded-lg hover:bg-orange-500/10 transition-colors flex items-center justify-center gap-2"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  View Plans
-                </button>
-              </div>
-
-              {/* Premium Features */}
-              <div className="border-t border-gray-800 pt-6">
-                <h3 className="text-sm font-semibold text-white mb-3">
-                  Premium Features
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 text-sm text-gray-300">
-                    <svg
-                      className="w-5 h-5 text-orange-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                    AI Review Analysis
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-300">
-                    <svg
-                      className="w-5 h-5 text-orange-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    CSV Export
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-300">
-                    <svg
-                      className="w-5 h-5 text-orange-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                    Competitive Intelligence and ASO
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-300">
-                    <svg
-                      className="w-5 h-5 text-orange-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                      />
-                    </svg>
-                    Unlimited Usage
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {renderSubscriptionModal()}
       </div>
     );
   }
@@ -2664,232 +2703,7 @@ ${analysisResult.marketOpportunities}
         )}
 
         {/* License Modal - Accessible from keywords view */}
-        {showLicenseModal && (
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setShowLicenseModal(false);
-              }
-            }}
-          >
-            <div
-              className="bg-[#1C1C1E] border border-gray-800 rounded-2xl w-full max-w-md p-8"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)",
-              }}
-            >
-              <button
-                onClick={() => setShowLicenseModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-
-              {/* Large Key Icon */}
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-blue-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                    />
-                  </svg>
-                </div>
-              </div>
-
-              <h2 className="text-2xl font-bold text-white text-center mb-2">
-                Activate Premium
-              </h2>
-              <p className="text-gray-400 text-center mb-6">
-                Get the best from BetterApp
-              </p>
-
-              <div className="mb-4">
-                <label className="text-sm text-gray-400 mb-2 block">
-                  License Key
-                </label>
-                <input
-                  type="text"
-                  value={licenseKey}
-                  onChange={(e) => setLicenseKey(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleLicenseSubmit()}
-                  placeholder="Enter your license key..."
-                  className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-                {licenseError && (
-                  <p className="text-red-400 text-sm mt-2">{licenseError}</p>
-                )}
-              </div>
-
-              <div className="flex gap-3 mb-6">
-                <button
-                  onClick={handleLicenseSubmit}
-                  disabled={isSubmittingLicense}
-                  className="flex-1 bg-orange-600 text-white font-semibold px-4 py-3 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmittingLicense ? (
-                    <>
-                      <svg
-                        className="animate-spin h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      Activating...
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                        />
-                      </svg>
-                      Activate License
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowLicenseModal(false);
-                    // Always navigate to landing page pricing section
-                    window.location.href = "/#pricing";
-                  }}
-                  className="flex-1 bg-transparent border-2 border-orange-500 text-orange-400 font-semibold px-4 py-3 rounded-lg hover:bg-orange-500/10 transition-colors flex items-center justify-center gap-2"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  View Plans
-                </button>
-              </div>
-
-              {/* Premium Features */}
-              <div className="border-t border-gray-800 pt-6">
-                <h3 className="text-sm font-semibold text-white mb-3">
-                  Premium Features
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 text-sm text-gray-300">
-                    <svg
-                      className="w-5 h-5 text-orange-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                    AI Review Analysis
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-300">
-                    <svg
-                      className="w-5 h-5 text-orange-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    CSV Export
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-300">
-                    <svg
-                      className="w-5 h-5 text-orange-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                    Competitive Intelligence and ASO
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-300">
-                    <svg
-                      className="w-5 h-5 text-orange-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                      />
-                    </svg>
-                    Unlimited Usage
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {renderSubscriptionModal()}
       </div>
     );
   }
@@ -3071,7 +2885,7 @@ ${analysisResult.marketOpportunities}
                 )}
 
                 {(aiTags.length > 0 || !hasLicense) && (
-                  <AITags tags={aiTags} hasLicense={hasLicense} />
+                  <AITags tags={aiTags} hasAccess={hasLicense} />
                 )}
 
                 <div>
@@ -4014,6 +3828,10 @@ const KeywordsView: React.FC<{
     Map<string, string>
   >(new Map());
   const [hoveredKeyword, setHoveredKeyword] = useState<string | null>(null);
+  const [lastDiscoveredAppId, setLastDiscoveredAppId] = useState<string | null>(
+    null
+  );
+  const [copiedDiscovered, setCopiedDiscovered] = useState(false);
 
   // Load tracked keywords and generate suggestions
   useEffect(() => {
@@ -4062,6 +3880,56 @@ const KeywordsView: React.FC<{
       clearInterval(interval);
     };
   }, [selectedApp]);
+
+  useEffect(() => {
+    if (!selectedApp) return;
+    if (lastDiscoveredAppId === selectedApp.id) return;
+
+    let cancelled = false;
+    const autoDiscover = async () => {
+      setIsDiscoveringKeywords(true);
+      try {
+        const discovered = await discoverRankingKeywords(
+          selectedApp,
+          selectedCountry
+        );
+        if (!cancelled) {
+          setDiscoveredKeywords(discovered);
+          setLastDiscoveredAppId(selectedApp.id);
+        }
+      } catch (error) {
+        console.error("Error auto-discovering keywords:", error);
+      } finally {
+        if (!cancelled) {
+          setIsDiscoveringKeywords(false);
+        }
+      }
+    };
+
+    autoDiscover();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedApp?.id, selectedCountry, lastDiscoveredAppId]);
+
+  const handleAddDiscoveredToTracking = () => {
+    discoveredKeywords.slice(0, 20).forEach((kw) => {
+      handleAddKeyword(kw.keyword, "extracted");
+    });
+  };
+
+  const handleCopyDiscoveredKeywords = async () => {
+    if (discoveredKeywords.length === 0) return;
+    try {
+      await navigator.clipboard.writeText(
+        discoveredKeywords.map((kw) => kw.keyword).join(", ")
+      );
+      setCopiedDiscovered(true);
+      setTimeout(() => setCopiedDiscovered(false), 2000);
+    } catch (error) {
+      console.error("Error copying keywords:", error);
+    }
+  };
 
   const handleAddKeyword = (
     keyword: string,
@@ -4431,6 +4299,81 @@ const KeywordsView: React.FC<{
 
         {/* Keywords Table - Like Try Astro */}
         <div className="flex-1 overflow-auto">
+          {discoveredKeywords.length > 0 && (
+            <div className="mx-4 my-6 bg-[#1C1C1E] border border-gray-800 rounded-2xl p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-white">
+                    Keywords you're already ranking for
+                  </h3>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Live data from the {selectedCountry} store. Add or copy
+                    these keywords to keep tracking their movement.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleCopyDiscoveredKeywords}
+                    className="px-4 py-2 text-sm rounded-lg border border-gray-700 text-gray-200 hover:bg-gray-800 transition-colors"
+                  >
+                    {copiedDiscovered ? "Copied!" : "Copy list"}
+                  </button>
+                  <button
+                    onClick={handleAddDiscoveredToTracking}
+                    className="px-4 py-2 text-sm rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+                  >
+                    Track top keywords
+                  </button>
+                </div>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {discoveredKeywords.slice(0, 10).map((kw) => (
+                  <div
+                    key={kw.keyword}
+                    className="p-4 rounded-xl border border-gray-800 bg-[#111213]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white font-semibold">{kw.keyword}</p>
+                        <p className="text-xs text-gray-500">
+                          Position:{" "}
+                          {kw.position ? `#${kw.position}` : "Not in top 25"}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          handleAddKeyword(kw.keyword, "extracted")
+                        }
+                        className="text-xs font-semibold text-orange-400 hover:text-orange-300"
+                      >
+                        Track
+                      </button>
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-gray-400">
+                      <div>
+                        <p className="text-gray-500">Popularity</p>
+                        <p className="text-white font-semibold">
+                          {kw.popularity}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Difficulty</p>
+                        <p className="text-white font-semibold">
+                          {kw.difficulty}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Apps</p>
+                        <p className="text-white font-semibold">
+                          {kw.totalAppsInRanking}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px]">
               <thead className="sticky top-0 bg-[#111213] z-10 border-b border-gray-800">

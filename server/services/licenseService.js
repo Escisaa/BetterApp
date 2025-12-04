@@ -188,6 +188,9 @@ export async function getActiveLicenseByEmail(email) {
     return {
       licenseKey: license.license_key,
       plan: subscription.plan || "yearly",
+      status: subscription.status,
+      subscriptionId: subscription.id,
+      currentPeriodEnd: subscription.current_period_end,
       expiresAt: license.expires_at,
     };
   } catch (error) {

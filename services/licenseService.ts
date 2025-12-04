@@ -92,6 +92,7 @@ export interface LicenseDetails {
   plan?: string;
   status?: string;
   expiresAt?: string;
+  currentPeriodEnd?: string;
   isActive?: boolean;
   deviceId?: string;
   stripeCustomerId?: string;
@@ -151,11 +152,9 @@ export async function resendLicenseKey(
   }
 }
 
-export async function fetchLicenseForEmail(email: string): Promise<{
-  success: boolean;
-  license?: { licenseKey: string; plan: string; expiresAt: string };
-  error?: string;
-}> {
+export async function fetchLicenseForEmail(
+  email: string
+): Promise<{ success: boolean; license?: LicenseDetails; error?: string }> {
   try {
     const response = await fetch(`${API_URL}/api/license/by-email`, {
       method: "POST",
@@ -164,10 +163,15 @@ export async function fetchLicenseForEmail(email: string): Promise<{
     });
 
     if (!response.ok) {
-      return { success: false, error: "No active license found" };
+      const errorText = await response.text();
+      return {
+        success: false,
+        error: errorText || "No active license found for this email",
+      };
     }
 
-    return await response.json();
+    const data = await response.json();
+    return data;
   } catch (error) {
     return { success: false, error: "Failed to fetch license" };
   }

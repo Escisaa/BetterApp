@@ -262,6 +262,138 @@ export const checkKeywordRanking = async (
   };
 };
 
+// Common high-value App Store keywords by category
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  productivity: [
+    "task manager",
+    "to do list",
+    "notes app",
+    "calendar",
+    "organizer",
+    "planner",
+    "reminder",
+    "checklist",
+    "time tracker",
+    "project management",
+  ],
+  social: [
+    "chat",
+    "messenger",
+    "social network",
+    "dating",
+    "friends",
+    "community",
+    "meet people",
+    "video call",
+    "voice chat",
+  ],
+  photo: [
+    "photo editor",
+    "filters",
+    "camera",
+    "selfie",
+    "collage",
+    "effects",
+    "beauty camera",
+    "photo enhancer",
+    "picture editor",
+  ],
+  music: [
+    "music player",
+    "streaming",
+    "podcast",
+    "radio",
+    "songs",
+    "playlist",
+    "audio player",
+    "mp3 player",
+    "music download",
+  ],
+  health: [
+    "fitness",
+    "workout",
+    "meditation",
+    "sleep",
+    "calorie counter",
+    "step tracker",
+    "health tracker",
+    "yoga",
+    "exercise",
+    "diet",
+  ],
+  finance: [
+    "budget",
+    "money tracker",
+    "expense tracker",
+    "savings",
+    "investment",
+    "crypto",
+    "wallet",
+    "banking",
+    "financial planner",
+  ],
+  games: [
+    "puzzle",
+    "arcade",
+    "strategy",
+    "adventure",
+    "action",
+    "multiplayer",
+    "offline game",
+    "casual game",
+  ],
+  education: [
+    "learning",
+    "language",
+    "study",
+    "flashcards",
+    "quiz",
+    "courses",
+    "tutorial",
+    "dictionary",
+    "translator",
+  ],
+  utility: [
+    "scanner",
+    "calculator",
+    "converter",
+    "flashlight",
+    "file manager",
+    "vpn",
+    "cleaner",
+    "battery saver",
+    "wifi",
+  ],
+  travel: [
+    "maps",
+    "navigation",
+    "hotel",
+    "flight",
+    "booking",
+    "trip planner",
+    "travel guide",
+    "currency converter",
+  ],
+  food: [
+    "recipes",
+    "cooking",
+    "food delivery",
+    "restaurant",
+    "meal planner",
+    "grocery",
+    "diet tracker",
+  ],
+  shopping: [
+    "deals",
+    "coupons",
+    "price comparison",
+    "online shopping",
+    "marketplace",
+    "fashion",
+    "clothes",
+  ],
+};
+
 /**
  * Discover keywords that the app is actually ranking for
  * Similar to Astro's "Found X Suggestions" feature
@@ -290,16 +422,17 @@ export const discoverRankingKeywords = async (
   // Generate potential keywords from app metadata
   const potentialKeywords = new Set<string>();
 
-  // From app name
+  // From app name (full name and each word)
   if (app.name) {
-    const nameWords = app.name
-      .toLowerCase()
-      .split(/[\s\-_]+/)
-      .filter((w) => w.length > 2);
+    const cleanName = app.name.toLowerCase().replace(/[^\w\s-]/g, "");
+    potentialKeywords.add(cleanName); // Full app name
+    const nameWords = cleanName.split(/[\s\-_]+/).filter((w) => w.length > 2);
     nameWords.forEach((w) => potentialKeywords.add(w));
-    // Add combinations
-    if (nameWords.length > 1) {
-      potentialKeywords.add(nameWords.join(" "));
+    // Add 2-word combinations
+    if (nameWords.length >= 2) {
+      for (let i = 0; i < nameWords.length - 1; i++) {
+        potentialKeywords.add(`${nameWords[i]} ${nameWords[i + 1]}`);
+      }
     }
   }
 
@@ -311,12 +444,68 @@ export const discoverRankingKeywords = async (
     phrases
       .slice(0, KEYWORD_CONFIG.MAX_PHRASES_FROM_DESCRIPTION)
       .forEach((p) => potentialKeywords.add(p));
+
+    // Also extract single important words (nouns, verbs)
+    const singleWords = desc.match(/\b\w{4,}\b/g) || [];
+    const stopWords = [
+      "this",
+      "that",
+      "with",
+      "have",
+      "from",
+      "your",
+      "will",
+      "been",
+      "more",
+      "when",
+      "very",
+      "most",
+      "only",
+      "also",
+      "just",
+      "about",
+      "other",
+      "into",
+      "some",
+      "could",
+      "their",
+      "what",
+      "which",
+      "would",
+      "there",
+      "were",
+      "they",
+      "being",
+    ];
+    singleWords
+      .filter((w) => !stopWords.includes(w) && w.length >= 4)
+      .slice(0, 15)
+      .forEach((w) => potentialKeywords.add(w));
   }
 
-  // From genre/category
+  // From genre/category - add both the category and related keywords
   if (app.primaryGenreName) {
-    potentialKeywords.add(app.primaryGenreName.toLowerCase());
+    const genre = app.primaryGenreName.toLowerCase();
+    potentialKeywords.add(genre);
+
+    // Add category-specific keywords
+    const categoryKey = Object.keys(CATEGORY_KEYWORDS).find(
+      (key) => genre.includes(key) || key.includes(genre.split(" ")[0])
+    );
+    if (categoryKey) {
+      CATEGORY_KEYWORDS[categoryKey].forEach((kw) => potentialKeywords.add(kw));
+    }
   }
+
+  // Add "best" and "free" variations for top keywords
+  const topKeywords = Array.from(potentialKeywords).slice(0, 5);
+  topKeywords.forEach((kw) => {
+    if (kw.length > 3 && kw.split(" ").length <= 2) {
+      potentialKeywords.add(`best ${kw}`);
+      potentialKeywords.add(`free ${kw}`);
+      potentialKeywords.add(`${kw} app`);
+    }
+  });
 
   // Check each potential keyword to see if app ranks for it
   const keywordsToCheck = Array.from(potentialKeywords).slice(
