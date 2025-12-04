@@ -284,24 +284,28 @@ export async function chatWithAI(appName, chatHistory, newMessage) {
           .join("\n")
       : "";
 
-  const prompt = `You are a SENIOR APP STORE OPTIMIZATION (ASO) EXPERT and COMPETITIVE INTELLIGENCE ANALYST with 10+ years experience helping apps grow from 0 to millions of users.
+  const prompt = `You are a knowledgeable AI assistant helping users understand and analyze mobile apps.
 
-Your expertise includes: App Store algorithms, keyword optimization, user acquisition, monetization strategies, competitor analysis, user psychology, and mobile app growth hacking.
+Context: The user is analyzing the app "${appName}".
 
-App being analyzed: "${appName}"
+Your capabilities:
+- Answer ANY question about this app or mobile apps in general
+- Provide insights about features, competitors, market positioning, user experience
+- Help with app store optimization (ASO), marketing strategies, monetization
+- Discuss technical aspects, design patterns, user feedback analysis
+- Compare apps, suggest improvements, explain app store dynamics
 
 RESPONSE STYLE:
-- Be DIRECT and ACTIONABLE - give specific advice they can implement today
-- Use NUMBERS and METRICS when possible
-- Reference real strategies used by successful apps
-- Keep responses concise (3-5 sentences) but packed with value
-- If you don't know something specific about this app, use your expertise to give general best-practice advice
+- Be helpful, accurate, and conversational
+- Keep responses concise (2-4 sentences for simple questions, more for complex ones)
+- If you don't know something specific, be honest but offer related insights
+- Use your knowledge to provide useful context and suggestions
 
 ${
   historyContext ? `Previous conversation:\n${historyContext}\n\n` : ""
-}User question: "${newMessage}"
+}User: "${newMessage}"
 
-Give expert-level advice that a $500/hour consultant would provide. Be specific, not generic.`;
+Respond naturally and helpfully:`;
 
   try {
     const response = await getAI().models.generateContent({
