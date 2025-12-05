@@ -139,20 +139,6 @@ const LandingPage: React.FC<LandingPageProps> = ({
             >
               Pricing
             </motion.a>
-            {isSignedIn && (
-              <motion.button
-                onClick={() => navigate("/dashboard")}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  isDark
-                    ? "bg-orange-600 text-white hover:bg-orange-700"
-                    : "bg-orange-600 text-white hover:bg-orange-700"
-                }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Get Started
-              </motion.button>
-            )}
             <motion.button
               onClick={() => setIsDark(!isDark)}
               className={`p-2 rounded-lg ${
@@ -311,7 +297,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     }
                   }}
                   disabled={isSubscribing}
-                  className="bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors shadow-md shadow-orange-900/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-md shadow-blue-900/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   whileHover={!isSubscribing ? { scale: 1.05, y: -2 } : {}}
                   whileTap={!isSubscribing ? { scale: 0.95 } : {}}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
@@ -521,9 +507,9 @@ const LandingPage: React.FC<LandingPageProps> = ({
                 whileHover={{ y: -4, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
                   <svg
-                    className="w-6 h-6 text-orange-400"
+                    className="w-6 h-6 text-blue-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -771,7 +757,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                       }`}
                     >
                       <svg
-                        className="w-5 h-5 text-orange-400 mr-3"
+                        className="w-5 h-5 text-blue-400 mr-3"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -789,7 +775,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                       }`}
                     >
                       <svg
-                        className="w-5 h-5 text-orange-400 mr-3"
+                        className="w-5 h-5 text-blue-400 mr-3"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -807,7 +793,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                       }`}
                     >
                       <svg
-                        className="w-5 h-5 text-orange-400 mr-3"
+                        className="w-5 h-5 text-blue-400 mr-3"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -825,7 +811,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                       }`}
                     >
                       <svg
-                        className="w-5 h-5 text-orange-400 mr-3"
+                        className="w-5 h-5 text-blue-400 mr-3"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -843,7 +829,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                       }`}
                     >
                       <svg
-                        className="w-5 h-5 text-orange-400 mr-3"
+                        className="w-5 h-5 text-blue-400 mr-3"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -861,7 +847,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                       }`}
                     >
                       <svg
-                        className="w-5 h-5 text-orange-400 mr-3"
+                        className="w-5 h-5 text-blue-400 mr-3"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -945,7 +931,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     }
                   }}
                   disabled={isSubscribing}
-                  className="w-full bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isSubscribing ? (
                     <>

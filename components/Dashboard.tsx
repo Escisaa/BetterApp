@@ -141,22 +141,22 @@ const AppListItem: React.FC<{
     />
     <div
       className="flex-1 overflow-hidden min-w-0"
-        onClick={() => onSelect(app)}
+      onClick={() => onSelect(app)}
     >
-            <p className="font-semibold text-sm text-gray-100 truncate">{app.name}</p>
-            <p className="text-xs text-gray-400 truncate">{app.developer}</p>
+      <p className="font-semibold text-sm text-gray-100 truncate">{app.name}</p>
+      <p className="text-xs text-gray-400 truncate">{app.developer}</p>
       <div className="flex items-center space-x-1 mt-1.5">
         <StarIcon className="w-3.5 h-3.5 text-yellow-400" />
         <span className="text-xs font-medium text-gray-300">{app.rating}</span>
         <span className="text-xs text-gray-500">({app.reviewsCount})</span>
-            </div>
+      </div>
       {app.reviews && app.reviews.length > 0 && (
         <div className="mt-2 space-y-1">
           {app.reviews.slice(0, 2).map((review) => (
             <div key={review.id} className="text-xs text-gray-400 line-clamp-2">
               <span className="text-yellow-400">★{review.rating}</span>{" "}
               {review.content.substring(0, 80)}...
-        </div>
+            </div>
           ))}
         </div>
       )}
@@ -177,7 +177,7 @@ const AppListItem: React.FC<{
         {isTracked ? "✓ Tracked" : "+ Track"}
       </button>
     )}
-    </li>
+  </li>
 );
 
 const AppDetailHeader: React.FC<{ app: App }> = ({ app }) => (
@@ -189,16 +189,16 @@ const AppDetailHeader: React.FC<{ app: App }> = ({ app }) => (
         className="w-24 h-24 rounded-3xl"
       />
       <div className="flex-1">
-            <div className="flex items-center space-x-4">
-                <h1 className="text-2xl font-bold text-white">{app.name}</h1>
-            </div>
-            <p className="text-md text-gray-400 mt-1">{app.developer}</p>
-            <div className="flex items-center space-x-2 mt-2">
+        <div className="flex items-center space-x-4">
+          <h1 className="text-2xl font-bold text-white">{app.name}</h1>
+        </div>
+        <p className="text-md text-gray-400 mt-1">{app.developer}</p>
+        <div className="flex items-center space-x-2 mt-2">
           <span className="font-bold text-lg text-white">
             {app.rating.toFixed(1)}
           </span>
-                <div className="flex">
-                    {[...Array(5)].map((_, i) => (
+          <div className="flex">
+            {[...Array(5)].map((_, i) => (
               <StarIcon
                 key={i}
                 className={`w-5 h-5 ${
@@ -207,11 +207,11 @@ const AppDetailHeader: React.FC<{ app: App }> = ({ app }) => (
                     : "text-gray-400"
                 }`}
               />
-                    ))}
-                </div>
-                <span className="text-gray-400">{app.reviewsCount} Ratings</span>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">Released {app.releaseDate}</p>
+            ))}
+          </div>
+          <span className="text-gray-400">{app.reviewsCount} Ratings</span>
+        </div>
+        <p className="text-xs text-gray-500 mt-2">Released {app.releaseDate}</p>
         <div className="flex items-center gap-2 mt-3">
           {app.trackViewUrl && (
             <a
@@ -350,23 +350,23 @@ const AppDetailHeader: React.FC<{ app: App }> = ({ app }) => (
         </p>
       </div>
     )}
-    </div>
+  </div>
 );
 
 const Screenshots: React.FC<{ urls: string[] }> = ({ urls }) => (
-    <div>
-        <h2 className="text-lg font-semibold mb-3 text-white">Screenshots</h2>
-        <div className="flex space-x-4 overflow-x-auto pb-2 -mx-6 px-6">
-            {urls.map((url, index) => (
+  <div>
+    <h2 className="text-lg font-semibold mb-3 text-white">Screenshots</h2>
+    <div className="flex space-x-4 overflow-x-auto pb-2 -mx-6 px-6">
+      {urls.map((url, index) => (
         <img
           key={index}
           src={url}
           alt={`Screenshot ${index + 1}`}
           className="h-80 rounded-xl object-cover"
         />
-            ))}
-        </div>
+      ))}
     </div>
+  </div>
 );
 
 const PerformanceCard: React.FC<{
@@ -375,15 +375,15 @@ const PerformanceCard: React.FC<{
   value: string;
   color: string;
 }> = ({ icon, label, value, color }) => (
-    <div className="bg-[#1C1C1E] border border-gray-800 rounded-xl p-6 flex-1">
+  <div className="bg-[#1C1C1E] border border-gray-800 rounded-xl p-6 flex-1">
     <div
       className={`w-10 h-10 rounded-full flex items-center justify-center ${color}`}
     >
-            {icon}
-        </div>
-        <p className="text-sm text-gray-400 mt-4">{label}</p>
-        <p className="text-3xl font-bold text-white mt-1">{value}</p>
+      {icon}
     </div>
+    <p className="text-sm text-gray-400 mt-4">{label}</p>
+    <p className="text-3xl font-bold text-white mt-1">{value}</p>
+  </div>
 );
 
 const AITags: React.FC<{ tags: string[]; hasAccess?: boolean }> = ({
@@ -498,9 +498,9 @@ const AITags: React.FC<{ tags: string[]; hasAccess?: boolean }> = ({
         ) : (
           <p className="text-gray-500 text-sm">No tags available yet</p>
         )}
-        </div>
+      </div>
     </div>
-);
+  );
 };
 
 const formatDate = (value?: string | Date) => {
@@ -515,9 +515,9 @@ const formatDate = (value?: string | Date) => {
 };
 
 const ReviewCard: React.FC<{ review: Review }> = ({ review }) => (
-    <div className="border-b border-gray-800 py-4">
-        <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-1">
+  <div className="border-b border-gray-800 py-4">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center space-x-1">
         {[...Array(5)].map((_, i) => (
           <StarIcon
             key={i}
@@ -526,67 +526,67 @@ const ReviewCard: React.FC<{ review: Review }> = ({ review }) => (
             }`}
           />
         ))}
-            </div>
-            <p className="text-xs text-gray-500">{review.date}</p>
-        </div>
-        <h3 className="font-semibold mt-2 text-gray-200">{review.title}</h3>
-        <p className="text-sm text-gray-400 mt-1">{review.content}</p>
-        <p className="text-xs text-gray-400 mt-2 font-medium">{review.author}</p>
+      </div>
+      <p className="text-xs text-gray-500">{review.date}</p>
     </div>
+    <h3 className="font-semibold mt-2 text-gray-200">{review.title}</h3>
+    <p className="text-sm text-gray-400 mt-1">{review.content}</p>
+    <p className="text-xs text-gray-400 mt-2 font-medium">{review.author}</p>
+  </div>
 );
 
 const AnalysisDisplay: React.FC<{
   result: AnalysisResult;
   onCopy: () => void;
 }> = ({ result, onCopy }) => (
-    <div className="bg-[#1C1C1E] border border-gray-800 rounded-xl p-6 relative">
+  <div className="bg-[#1C1C1E] border border-gray-800 rounded-xl p-6 relative">
     <button
       onClick={onCopy}
       className="absolute top-4 right-4 p-2 text-gray-400 hover:bg-gray-700 rounded-md"
     >
       <ClipboardIcon className="w-5 h-5" />
-        </button>
-        <h2 className="text-xl font-bold text-gray-100 mb-4">AI Analysis</h2>
-        
-        <div className="space-y-6">
-            <div>
-                <h3 className="font-semibold text-gray-200 mb-2">Summary</h3>
-                <p className="text-sm text-gray-400">{result.summary}</p>
-            </div>
-             <div>
-                <h3 className="font-semibold text-gray-200 mb-2">Common Complaints</h3>
-                <ul className="list-disc list-inside space-y-1">
+    </button>
+    <h2 className="text-xl font-bold text-gray-100 mb-4">AI Analysis</h2>
+
+    <div className="space-y-6">
+      <div>
+        <h3 className="font-semibold text-gray-200 mb-2">Summary</h3>
+        <p className="text-sm text-gray-400">{result.summary}</p>
+      </div>
+      <div>
+        <h3 className="font-semibold text-gray-200 mb-2">Common Complaints</h3>
+        <ul className="list-disc list-inside space-y-1">
           {result.commonComplaints.map((item, i) => (
             <li key={i} className="text-sm text-gray-400">
               {item}
             </li>
           ))}
-                </ul>
-            </div>
-             <div>
-                <h3 className="font-semibold text-gray-200 mb-2">Feature Requests</h3>
-                 <ul className="list-disc list-inside space-y-1">
+        </ul>
+      </div>
+      <div>
+        <h3 className="font-semibold text-gray-200 mb-2">Feature Requests</h3>
+        <ul className="list-disc list-inside space-y-1">
           {result.featureRequests.map((item, i) => (
             <li key={i} className="text-sm text-gray-400">
               {item}
             </li>
           ))}
-                </ul>
-            </div>
-             <div>
+        </ul>
+      </div>
+      <div>
         <h3 className="font-semibold text-gray-200 mb-2">
           Monetization Insights
         </h3>
-                <p className="text-sm text-gray-400">{result.monetization}</p>
-            </div>
-             <div>
+        <p className="text-sm text-gray-400">{result.monetization}</p>
+      </div>
+      <div>
         <h3 className="font-semibold text-gray-200 mb-2">
           Market Opportunities
         </h3>
-                <p className="text-sm text-gray-400">{result.marketOpportunities}</p>
-            </div>
-        </div>
+        <p className="text-sm text-gray-400">{result.marketOpportunities}</p>
+      </div>
     </div>
+  </div>
 );
 
 // Chat Modal Component (like Peter AI)
@@ -599,9 +599,9 @@ const ChatModal: React.FC<{
     { role: "user" | "model"; text: string }[]
   >([]);
   const [input, setInput] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
+  useEffect(() => {
     // Clear chat when app changes or modal closes
     if (!isOpen) {
       setMessages([]);
@@ -620,18 +620,18 @@ const ChatModal: React.FC<{
     return () => window.removeEventListener("keydown", handleEsc);
   }, [isOpen, onClose]);
 
-    const handleSend = async () => {
+  const handleSend = async () => {
     if (!input.trim() || isLoading || !app) return;
 
     const userMessage = { role: "user" as const, text: input };
     setMessages((prev) => [...prev, userMessage]);
     const currentInput = input;
     setInput("");
-        setIsLoading(true);
+    setIsLoading(true);
 
-        try {
+    try {
       const chatHistory: any[] = messages.map((m) => ({
-                role: m.role,
+        role: m.role,
         parts: [{ text: m.text }],
       }));
       const responseText = await chatWithAI(
@@ -643,7 +643,7 @@ const ChatModal: React.FC<{
         ...prev,
         { role: "model" as const, text: responseText },
       ]);
-        } catch (error) {
+    } catch (error) {
       setMessages((prev) => [
         ...prev,
         {
@@ -651,10 +651,10 @@ const ChatModal: React.FC<{
           text: "Sorry, I couldn't get a response. Please try again.",
         },
       ]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const suggestedQuestions = [
     "What do users like most about this app?",
@@ -696,7 +696,7 @@ const ChatModal: React.FC<{
 
   if (!isOpen || !app) return null;
 
-    return (
+  return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={(e) => {
@@ -807,7 +807,7 @@ const ChatModal: React.FC<{
             </div>
           ) : (
             <div className="space-y-4">
-                    {messages.map((msg, index) => (
+              {messages.map((msg, index) => (
                 <div
                   key={index}
                   className={`flex ${
@@ -824,11 +824,11 @@ const ChatModal: React.FC<{
                     <p className="text-sm whitespace-pre-wrap leading-relaxed">
                       {msg.text}
                     </p>
-                            </div>
-                        </div>
-                    ))}
-                     {isLoading && (
-                        <div className="flex justify-start">
+                  </div>
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-start">
                   <div className="bg-gray-800 border border-gray-700 text-gray-300 px-4 py-3 rounded-2xl rounded-bl-sm">
                     <div className="flex items-center gap-2">
                       <div
@@ -845,62 +845,62 @@ const ChatModal: React.FC<{
                       ></div>
                     </div>
                   </div>
-                        </div>
-                    )}
                 </div>
+              )}
+            </div>
           )}
         </div>
 
         {/* Input */}
         <div className="p-4 border-t border-gray-800 bg-[#1C1C1E]">
           <div className="flex items-center gap-2">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) =>
                 e.key === "Enter" && !e.shiftKey && handleSend()
               }
               placeholder="Ask about this app"
               className="flex-1 bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent placeholder-gray-500"
-                    />
-                    <button
-                        onClick={handleSend}
-                        disabled={isLoading || !input.trim()}
+            />
+            <button
+              onClick={handleSend}
+              disabled={isLoading || !input.trim()}
               className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-                    >
+            >
               <SendIcon className="w-4 h-4" />
-                    </button>
+            </button>
           </div>
-                </div>
-            </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 const AnalysisPlaceholder: React.FC = () => {
-    const placeholderApps = [
-        { name: "Payout", bg: "bg-blue-500", emoji: "💰" },
-        { name: "Fitness", bg: "bg-orange-500", emoji: "💪" },
-        { name: "Dating", bg: "bg-pink-500", emoji: "💕" },
-        { name: "Music", bg: "bg-red-500", emoji: "🎵" },
-        { name: "Heart", bg: "bg-gray-800", emoji: "❤️" },
-        { name: "Social", bg: "bg-slate-700", emoji: "👥" },
-    ];
-    
-    return (
-        <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 bg-[#111213]">
-            <div className="grid grid-cols-3 gap-6 mb-6">
+  const placeholderApps = [
+    { name: "Payout", bg: "bg-blue-500", emoji: "💰" },
+    { name: "Fitness", bg: "bg-orange-500", emoji: "💪" },
+    { name: "Dating", bg: "bg-pink-500", emoji: "💕" },
+    { name: "Music", bg: "bg-red-500", emoji: "🎵" },
+    { name: "Heart", bg: "bg-gray-800", emoji: "❤️" },
+    { name: "Social", bg: "bg-slate-700", emoji: "👥" },
+  ];
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 bg-[#111213]">
+      <div className="grid grid-cols-3 gap-6 mb-6">
         {placeholderApps.map((app) => (
-                    <div key={app.name} className="flex flex-col items-center gap-2">
+          <div key={app.name} className="flex flex-col items-center gap-2">
             <div
               className={`w-20 h-20 ${app.bg} rounded-3xl flex items-center justify-center text-3xl shadow-md`}
             >
-                            {app.emoji}
-                        </div>
-                    </div>
-                ))}
+              {app.emoji}
             </div>
+          </div>
+        ))}
+      </div>
       <h2 className="text-xl font-semibold text-gray-200">
         Select an app to begin analysis
       </h2>
@@ -908,17 +908,17 @@ const AnalysisPlaceholder: React.FC = () => {
         Choose an app from the search results on the left to view its details,
         reviews, and AI-powered insights.
       </p>
-        </div>
+    </div>
   );
 };
 
 const LoadingPlaceholder: React.FC<{ text: string }> = ({ text }) => (
-    <div className="flex items-center justify-center h-full">
-        <div className="text-center text-gray-400 space-y-2">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
-            <p>{text}</p>
-        </div>
+  <div className="flex items-center justify-center h-full">
+    <div className="text-center text-gray-400 space-y-2">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+      <p>{text}</p>
     </div>
+  </div>
 );
 
 const Dashboard: React.FC = () => {
@@ -927,18 +927,18 @@ const Dashboard: React.FC = () => {
     "search"
   );
   const [searchQuery, setSearchQuery] = useState("");
-    const [searchResults, setSearchResults] = useState<App[]>([]);
-    const [selectedApp, setSelectedApp] = useState<App | null>(null);
-    const [aiTags, setAiTags] = useState<string[]>([]);
-    const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
-    const [isSearching, setIsSearching] = useState(false);
-    const [isDetailsLoading, setIsDetailsLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<App[]>([]);
+  const [selectedApp, setSelectedApp] = useState<App | null>(null);
+  const [aiTags, setAiTags] = useState<string[]>([]);
+  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isDetailsLoading, setIsDetailsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
     null
   );
   const [copySuccess, setCopySuccess] = useState("");
   const [activeTab, setActiveTab] = useState("");
-    const [bubbleApps, setBubbleApps] = useState(initialUiApps);
+  const [bubbleApps, setBubbleApps] = useState(initialUiApps);
   const [isLoadingBubbles, setIsLoadingBubbles] = useState(true);
   const [trackedApps, setTrackedApps] = useState<TrackedApp[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<string>("US");
@@ -975,7 +975,7 @@ const Dashboard: React.FC = () => {
     useState<TrackedApp | null>(null);
 
   // Check license on mount and auto-link by email if available
-    useEffect(() => {
+  useEffect(() => {
     const checkLicense = async () => {
       try {
         const {
@@ -1011,8 +1011,8 @@ const Dashboard: React.FC = () => {
             setLicenseDetails(normalizedDetails);
             return;
           }
-                            }
-                        } catch (error) {
+        }
+      } catch (error) {
         console.error("Error checking license:", error);
         setHasLicense(false);
       }
@@ -1136,25 +1136,25 @@ const Dashboard: React.FC = () => {
     // Fetch icons in background
     fetchInitialIcons();
   }, []);
-    
-    const handleSearchView = () => {
+
+  const handleSearchView = () => {
     setView("search");
-        setSelectedApp(null);
+    setSelectedApp(null);
     setSearchQuery("");
-        setSearchResults([]);
+    setSearchResults([]);
   };
 
-    const handleSearch = async (query: string) => {
-        if (!query.trim()) return;
-        
-        setIsSearching(true);
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) return;
+
+    setIsSearching(true);
     if (view === "search") {
       setView("analysis");
-        }
-        setSelectedApp(null);
-        setSearchResults([]);
+    }
+    setSelectedApp(null);
+    setSearchResults([]);
 
-        try {
+    try {
       const apps = await searchApps(query, selectedCountry);
       // Fetch reviews for each app to show in search results (like Peter AI)
       const appsWithReviews = await Promise.all(
@@ -1206,45 +1206,45 @@ const Dashboard: React.FC = () => {
         });
       }
     } catch (error: any) {
-            console.error("Error searching apps:", error);
+      console.error("Error searching apps:", error);
       const errorMessage =
         error?.message || "Failed to search for apps. Please try again.";
       alert(errorMessage);
       if (view === "analysis") {
-                handleSearchView(); // Go back to search if it fails
-            }
-        } finally {
-            setIsSearching(false);
-        }
+        handleSearchView(); // Go back to search if it fails
+      }
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleSelectApp = useCallback(
     async (app: App) => {
-        if (selectedApp?.id === app.id && selectedApp.reviews.length > 0) {
-            return; // Avoid re-fetching if already selected and detailed
-        }
-        setSelectedApp(app); // Show basic info immediately
-        setSearchQuery(app.name);
-        setIsDetailsLoading(true);
-        setAnalysisResult(null);
-        setAiTags([]);
+      if (selectedApp?.id === app.id && selectedApp.reviews.length > 0) {
+        return; // Avoid re-fetching if already selected and detailed
+      }
+      setSelectedApp(app); // Show basic info immediately
+      setSearchQuery(app.name);
+      setIsDetailsLoading(true);
+      setAnalysisResult(null);
+      setAiTags([]);
 
-        try {
-            const detailedApp = await getAppDetails(app.name, app.id);
-            setSelectedApp(detailedApp);
+      try {
+        const detailedApp = await getAppDetails(app.name, app.id);
+        setSelectedApp(detailedApp);
 
         setBubbleApps((prevApps) => {
           // Check if app already exists in wheel
           if (prevApps.some((b) => b.id === detailedApp.id)) {
-                    return prevApps;
-                }
+            return prevApps;
+          }
 
           // Add new app to the front of the list (most recent)
-                const newAppBubble = {
-                    id: detailedApp.id,
-                    displayName: detailedApp.name.split(/[:–-]/)[0].trim(),
-                    searchTerm: detailedApp.name,
-                    icon: detailedApp.icon,
+          const newAppBubble = {
+            id: detailedApp.id,
+            displayName: detailedApp.name.split(/[:–-]/)[0].trim(),
+            searchTerm: detailedApp.name,
+            icon: detailedApp.icon,
             bg: "bg-gray-800",
           };
 
@@ -1274,16 +1274,16 @@ const Dashboard: React.FC = () => {
         } else {
           // Clear tags if no license
           setAiTags([]);
-            }
-        } catch (error) {
-            console.error("Error fetching app details:", error);
+        }
+      } catch (error) {
+        console.error("Error fetching app details:", error);
         alert(
           "Failed to load app details. The app might not be available in the US App Store or there was a network issue."
         );
-            setSelectedApp(null);
-        } finally {
-            setIsDetailsLoading(false);
-        }
+        setSelectedApp(null);
+      } finally {
+        setIsDetailsLoading(false);
+      }
     },
     [selectedApp?.id]
   );
@@ -1307,10 +1307,10 @@ const Dashboard: React.FC = () => {
     return () => window.removeEventListener("keydown", handleEsc);
   }, [showChatModal, showTrackedModal, showAnalysisModal, showKeywordsModal]);
 
-    useEffect(() => {
-        if (selectedApp && selectedApp.reviews.length > 0) {
-            setAnalysisResult(null); 
-            setIsLoadingAnalysis(false);
+  useEffect(() => {
+    if (selectedApp && selectedApp.reviews.length > 0) {
+      setAnalysisResult(null);
+      setIsLoadingAnalysis(false);
       setAnalysisComplete(false);
       setShowAnalysisModal(false);
       setActiveTab("premium"); // Reset to User Analysis tab in analysis modal
@@ -1628,15 +1628,15 @@ const Dashboard: React.FC = () => {
     );
   };
 
-    const handleAnalyze = useCallback(async () => {
+  const handleAnalyze = useCallback(async () => {
     if (!hasLicense) {
       setShowLicenseModal(true);
       return;
     }
-        if (!selectedApp || selectedApp.reviews.length === 0) return;
+    if (!selectedApp || selectedApp.reviews.length === 0) return;
 
-        setIsLoadingAnalysis(true);
-        setAnalysisResult(null);
+    setIsLoadingAnalysis(true);
+    setAnalysisResult(null);
     setAnalysisComplete(false);
     try {
       const result = await analyzeReviewsWithAI(
@@ -1663,22 +1663,22 @@ const Dashboard: React.FC = () => {
         // Continue without it - not critical
       }
 
-            setAnalysisResult(result);
+      setAnalysisResult(result);
       setAnalysisComplete(true);
 
       // Save analysis to history
       saveAnalysis(selectedApp, result, aiTags);
-        } catch (error) {
-            console.error(error);
-            alert((error as Error).message);
-        } finally {
-            setIsLoadingAnalysis(false);
-        }
+    } catch (error) {
+      console.error(error);
+      alert((error as Error).message);
+    } finally {
+      setIsLoadingAnalysis(false);
+    }
   }, [selectedApp, aiTags]);
-    
-    const copyToClipboard = () => {
-        if (!analysisResult || !selectedApp) return;
-        const textToCopy = `
+
+  const copyToClipboard = () => {
+    if (!analysisResult || !selectedApp) return;
+    const textToCopy = `
 AI Analysis for ${selectedApp.name}
 
 ## Summary
@@ -1696,13 +1696,13 @@ ${analysisResult.monetization}
 ## Market Opportunities
 ${analysisResult.marketOpportunities}
         `;
-        navigator.clipboard.writeText(textToCopy.trim());
+    navigator.clipboard.writeText(textToCopy.trim());
     setCopySuccess("Copied!");
     setTimeout(() => setCopySuccess(""), 2000);
-    };
+  };
 
   if (view === "search") {
-        const tabs = [
+    const tabs = [
       {
         id: "tracked",
         label: "Tracked Apps",
@@ -1727,17 +1727,17 @@ ${analysisResult.marketOpportunities}
           </svg>
         ),
       },
-        ];
-        
-        return (
+    ];
+
+    return (
       <div className="min-h-screen bg-[#111213] flex flex-col font-sans p-4 sm:p-8">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                     <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3">
             <Logo size={32} className="rounded-lg" />
             <span className="font-semibold text-lg sm:text-xl tracking-tight text-white">
               BetterApp
             </span>
-                    </div>
+          </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={async () => {
@@ -1807,9 +1807,9 @@ ${analysisResult.marketOpportunities}
                 Upgrade to Pro
               </button>
             )}
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.id}
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
                 onClick={() => {
                   if (tab.id === "tracked") {
                     setShowTrackedModal(true);
@@ -1827,16 +1827,16 @@ ${analysisResult.marketOpportunities}
                   (tab.id === "license" && showLicenseModal) ||
                   (tab.id === "tracked" && showTrackedModal) ||
                   (tab.id === "keywords" && (view as string) === "keywords")
-                                    ? "bg-gray-200 text-gray-900"
-                                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                                }`}
-                            >
+                    ? "bg-gray-200 text-gray-900"
+                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                }`}
+              >
                 {tab.icon}
                 <span className="hidden sm:inline">{tab.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </header>
+              </button>
+            ))}
+          </div>
+        </header>
 
         {/* Tracked Apps Modal - Peter AI Style */}
         {showTrackedModal && (
@@ -2366,7 +2366,7 @@ ${analysisResult.marketOpportunities}
         )}
 
         {!showTrackedModal && !showLicenseModal && view === "search" && (
-                <div className="flex-grow flex flex-col items-center justify-center">
+          <div className="flex-grow flex flex-col items-center justify-center">
             <main className="relative w-full h-64 sm:h-96 my-8 sm:my-12 flex items-center justify-center">
               {isLoadingBubbles ? (
                 <div className="flex items-center justify-center">
@@ -2380,32 +2380,32 @@ ${analysisResult.marketOpportunities}
                   className="w-64 h-64 sm:w-96 sm:h-96 relative"
                   style={{ animation: "rotate-wheel 60s linear infinite" }}
                 >
-                            {bubbleApps.map((app, index) => {
-                                const radius = 140;
-                                const radians = (app.angle * Math.PI) / 180;
-                                const x = Math.cos(radians) * radius;
-                                const y = Math.sin(radians) * radius;
-                                const floatClass = `float-${(index % 7) + 1}`;
+                  {bubbleApps.map((app, index) => {
+                    const radius = 140;
+                    const radians = (app.angle * Math.PI) / 180;
+                    const x = Math.cos(radians) * radius;
+                    const y = Math.sin(radians) * radius;
+                    const floatClass = `float-${(index % 7) + 1}`;
 
-                                return (
-                                    <div // Positioning wrapper
+                    return (
+                      <div // Positioning wrapper
                         key={`${app.id}-${index}`}
-                                        className="absolute top-1/2 left-1/2"
-                                        style={{ transform: `translate(${x}px, ${y}px)` }}
-                                    >
-                                        <div // Centering wrapper
-                                            className="w-20 h-20 -translate-x-1/2 -translate-y-1/2"
-                                        >
-                                            <div // Animation wrapper + Click Handler
-                                                className={`w-full h-full group cursor-pointer ${floatClass}`}
-                                                onClick={() => handleSearch(app.searchTerm)}
-                                            >
-                                                <div
+                        className="absolute top-1/2 left-1/2"
+                        style={{ transform: `translate(${x}px, ${y}px)` }}
+                      >
+                        <div // Centering wrapper
+                          className="w-20 h-20 -translate-x-1/2 -translate-y-1/2"
+                        >
+                          <div // Animation wrapper + Click Handler
+                            className={`w-full h-full group cursor-pointer ${floatClass}`}
+                            onClick={() => handleSearch(app.searchTerm)}
+                          >
+                            <div
                               className={`w-full h-full rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300 border border-gray-800 overflow-hidden ${
                                 app.icon ? "" : app.bg || "bg-gray-800"
                               }`}
-                                                >
-                                                    {app.icon ? (
+                            >
+                              {app.icon ? (
                                 <img
                                   src={app.icon}
                                   alt={`${app.displayName} logo`}
@@ -2440,43 +2440,43 @@ ${analysisResult.marketOpportunities}
                                 >
                                   {app.displayName.charAt(0).toUpperCase()}
                                 </div>
-                                                    )}
-                                                </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                    );
-                            })}
+                              )}
+                            </div>
+                          </div>
                         </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
-                    </main>
+            </main>
 
             <footer className="flex flex-col items-center gap-4 w-full max-w-2xl mx-auto px-4">
-                        <div className="w-full relative">
+              <div className="w-full relative">
                 <SearchIcon className="absolute left-3 sm:left-5 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4 sm:w-5 sm:h-5" />
-                            <input
-                                type="text"
-                                placeholder="Search by app name, developer, App Store URL, or App ID..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                <input
+                  type="text"
+                  placeholder="Search by app name, developer, App Store URL, or App ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) =>
                     e.key === "Enter" && handleSearch(searchQuery)
                   }
                   className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-full border border-gray-700 bg-gray-900 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                            />
-                        </div>
+                />
+              </div>
               <p className="text-gray-500 text-xs sm:text-sm text-center">
                 Search for any app on the App Store to analyze user reviews
               </p>
-                    </footer>
-                </div>
+            </footer>
+          </div>
         )}
 
         {renderSubscriptionModal()}
-            </div>
-        );
-    }
-    
+      </div>
+    );
+  }
+
   // Keywords View
   if (view === "keywords") {
     const appsWithKeywords = [...trackedApps.map((t) => t.app)].filter(
@@ -2495,7 +2495,7 @@ ${analysisResult.marketOpportunities}
               <ArrowLeftIcon className="w-4 h-4" />
               <span>Back to Search</span>
             </button>
-                 </div>
+          </div>
           <div className="p-4 border-b border-gray-800 bg-[#111213]">
             <h2 className="text-lg font-semibold text-white">Apps</h2>
           </div>
@@ -2712,15 +2712,15 @@ ${analysisResult.marketOpportunities}
   return (
     <div className="flex flex-col md:flex-row h-screen bg-[#111213]">
       <aside className="w-full md:w-96 bg-[#1C1C1E] border-r border-gray-800 flex flex-col shrink-0 max-h-[40vh] md:max-h-none">
-                 <div className="p-4 border-b border-gray-800">
+        <div className="p-4 border-b border-gray-800">
           <button
             onClick={handleSearchView}
             className="flex items-center space-x-2 text-sm font-medium text-gray-400 hover:text-white"
           >
-                        <ArrowLeftIcon className="w-4 h-4" />
-                        <span>New Search</span>
-                    </button>
-                </div>
+            <ArrowLeftIcon className="w-4 h-4" />
+            <span>New Search</span>
+          </button>
+        </div>
         <div className="p-4 border-b border-gray-800 space-y-3">
           <div className="relative">
             <label className="text-xs text-gray-400 mb-1.5 block">
@@ -2738,23 +2738,23 @@ ${analysisResult.marketOpportunities}
               ))}
             </select>
           </div>
-                    <div className="relative">
-                        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+          <div className="relative">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleSearch(searchQuery);
                 }
               }}
               placeholder="Search by app name, developer, App Store URL, or App ID..."
-                            className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-orange-500 focus:border-orange-500"
-                        />
-                    </div>
-                </div>
-                <div className="flex-1 overflow-y-auto">
+              className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-orange-500 focus:border-orange-500"
+            />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
           {isSearching ? (
             <LoadingPlaceholder text="Searching..." />
           ) : (
@@ -2767,11 +2767,11 @@ ${analysisResult.marketOpportunities}
               {searchResults.map((app) => {
                 const isTracked = trackedApps.some((t) => t.id === app.id);
                 return (
-                                <AppListItem
-                                    key={app.id}
-                                    app={app}
-                                    isSelected={selectedApp?.id === app.id}
-                                    onSelect={() => handleSelectApp(app)}
+                  <AppListItem
+                    key={app.id}
+                    app={app}
+                    isSelected={selectedApp?.id === app.id}
+                    onSelect={() => handleSelectApp(app)}
                     onTrack={(app) => {
                       if (isTracked) {
                         removeTrackedApp(app.id);
@@ -2784,12 +2784,12 @@ ${analysisResult.marketOpportunities}
                   />
                 );
               })}
-                        </ul>
+            </ul>
           )}
-                </div>
-            </aside>
+        </div>
+      </aside>
 
-            <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto">
         {isDetailsLoading ? (
           <LoadingPlaceholder text="Loading app details..." />
         ) : selectedApp ? (
@@ -2806,8 +2806,8 @@ ${analysisResult.marketOpportunities}
               </div>
             ) : (
               <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-8">
-                        <AppDetailHeader app={selectedApp} />
-                        <Screenshots urls={selectedApp.screenshots} />
+                <AppDetailHeader app={selectedApp} />
+                <Screenshots urls={selectedApp.screenshots} />
 
                 {/* Analysis Complete Banner - Show under screenshots */}
                 {analysisComplete && analysisResult && !showAnalysisModal && (
@@ -2832,7 +2832,7 @@ ${analysisResult.marketOpportunities}
                             />
                           </svg>
                         </div>
-                          <div>
+                        <div>
                           <p className="text-white font-semibold text-lg">
                             Analysis Complete!
                           </p>
@@ -2863,7 +2863,7 @@ ${analysisResult.marketOpportunities}
                     <h2 className="text-lg font-semibold mb-3 text-white">
                       App Performance
                     </h2>
-                              <div className="flex space-x-6">
+                    <div className="flex space-x-6">
                       <PerformanceCard
                         icon={
                           <DownloadIcon className="w-6 h-6 text-green-400" />
@@ -2880,23 +2880,23 @@ ${analysisResult.marketOpportunities}
                         value={selectedApp.revenue}
                         color="bg-indigo-500/10"
                       />
-                              </div>
-                          </div>
-                        )}
+                    </div>
+                  </div>
+                )}
 
                 {(aiTags.length > 0 || !hasLicense) && (
                   <AITags tags={aiTags} hasAccess={hasLicense} />
                 )}
-                        
-                        <div>
-                            <div className="flex justify-between items-center mb-3">
+
+                <div>
+                  <div className="flex justify-between items-center mb-3">
                     <h2 className="text-lg font-semibold text-white">
                       Reviews ({selectedApp.reviews.length})
                       <span className="text-sm text-gray-500 font-normal ml-2">
                         ⓘ
                       </span>
                     </h2>
-                                {selectedApp.reviews.length > 0 && (
+                    {selectedApp.reviews.length > 0 && (
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => {
@@ -2923,9 +2923,9 @@ ${analysisResult.marketOpportunities}
                           </svg>
                           <span>Chat</span>
                         </button>
-                                <button
-                                    onClick={handleAnalyze}
-                                    disabled={isLoadingAnalysis}
+                        <button
+                          onClick={handleAnalyze}
+                          disabled={isLoadingAnalysis}
                           className="flex items-center space-x-2 bg-orange-600/20 border border-orange-500/50 text-orange-400 font-medium px-3 py-1.5 rounded-lg hover:bg-orange-600/30 disabled:bg-orange-900/20 disabled:border-orange-900/50 disabled:text-orange-600 transition-colors text-sm"
                         >
                           <WandIcon className="w-4 h-4" />
@@ -2934,7 +2934,7 @@ ${analysisResult.marketOpportunities}
                               ? "Analyzing..."
                               : "Analyze reviews with AI"}
                           </span>
-                                </button>
+                        </button>
                         <button
                           onClick={() => {
                             if (!hasLicense) {
@@ -2976,10 +2976,10 @@ ${analysisResult.marketOpportunities}
                           <span>CSV Export</span>
                         </button>
                       </div>
-                                )}
-                            </div>
-                            
-                            <div className="mt-6">
+                    )}
+                  </div>
+
+                  <div className="mt-6">
                     {selectedApp.reviews
                       .filter((review) => {
                         if (
@@ -3000,8 +3000,8 @@ ${analysisResult.marketOpportunities}
                         return true;
                       })
                       .map((review) => (
-                                    <ReviewCard key={review.id} review={review} />
-                                ))}
+                        <ReviewCard key={review.id} review={review} />
+                      ))}
                     {selectedApp.reviews.filter((review) => {
                       if (
                         reviewFilter.rating &&
@@ -3022,8 +3022,8 @@ ${analysisResult.marketOpportunities}
                         No reviews match your filters
                       </p>
                     )}
-                            </div>
-                        </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -3767,12 +3767,12 @@ ${analysisResult.marketOpportunities}
               </div>
             )}
           </>
-                ) : (
-                     <AnalysisPlaceholder />
-                )}
-            </main>
-        </div>
-    );
+        ) : (
+          <AnalysisPlaceholder />
+        )}
+      </main>
+    </div>
+  );
 };
 
 // Keywords View Component (Full Page)
