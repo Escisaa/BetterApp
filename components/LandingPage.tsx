@@ -6,6 +6,7 @@ import Logo from "./Logo";
 import InAction from "./InAction";
 import ChatDemo from "./ChatDemo";
 import MobileMockupSection from "./MobileMockupSection";
+import FeaturesShowcase from "./FeaturesShowcase";
 import Footer from "./Footer";
 
 interface LandingPageProps {
@@ -687,6 +688,9 @@ const LandingPage: React.FC<LandingPageProps> = ({
             </div>
           </div>
         </motion.section>
+
+        {/* Features Showcase - Like Astro */}
+        <FeaturesShowcase isDark={isDark} />
 
         {/* Pricing Section */}
         <motion.section
