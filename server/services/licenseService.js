@@ -145,11 +145,11 @@ export async function getActiveLicenseByEmail(email) {
 
     console.log(`🔍 Looking for license for email: ${normalizedEmail}`);
 
-    // STRATEGY 1: Find active subscription by email
+    // STRATEGY 1: Find active subscription by email (case-insensitive)
     const { data: subscription, error: subscriptionError } = await supabase
       .from("subscriptions")
       .select("id, plan, status, current_period_end, email, created_at")
-      .eq("email", normalizedEmail)
+      .ilike("email", normalizedEmail)
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(1)
@@ -193,12 +193,12 @@ export async function getActiveLicenseByEmail(email) {
       }
     }
 
-    // STRATEGY 2: Find license directly by user_email
+    // STRATEGY 2: Find license directly by user_email (case-insensitive)
     console.log(`🔍 Trying direct license lookup by user_email...`);
     const { data: directLicense, error: directError } = await supabase
       .from("licenses")
       .select("*, subscriptions(*)")
-      .eq("user_email", normalizedEmail)
+      .ilike("user_email", normalizedEmail)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .limit(1)
