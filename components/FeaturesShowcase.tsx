@@ -438,7 +438,7 @@ const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ isDark }) => {
             >
               Everything you need
               <br />
-              to <span className="text-orange-400">grow your app</span>
+              to grow your app
             </motion.h2>
             <motion.p
               className={`text-lg max-w-2xl mx-auto ${

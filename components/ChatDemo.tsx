@@ -40,7 +40,7 @@ const ChatDemo: React.FC<ChatDemoProps> = ({ isDark = true }) => {
             isDark ? "text-white" : "text-gray-900"
           }`}
         >
-          Chat with any app <span className="text-orange-500">using AI</span>
+          Chat with any app using AI
         </h2>
         <p
           className={`max-w-2xl mx-auto mt-4 text-lg ${

@@ -202,7 +202,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
-              ✨ Made for indie iOS developers
+                ✨ Made for indie iOS developers
             </motion.div>
             <motion.h1
               className={`text-5xl sm:text-6xl md:text-7xl font-extrabold ${
@@ -210,9 +210,9 @@ const LandingPage: React.FC<LandingPageProps> = ({
               } tracking-tighter leading-tight`}
               variants={fadeInUp}
             >
-              Understand your competition.
-              <br />
-              Build better apps.
+                Understand your competition.
+                <br />
+                Build better apps.
             </motion.h1>
             <motion.p
               className={`max-w-2xl mx-auto mt-6 text-lg ${
@@ -297,7 +297,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     }
                   }}
                   disabled={isSubscribing}
-                  className="bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-md shadow-blue-900/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors shadow-md shadow-orange-900/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   whileHover={!isSubscribing ? { scale: 1.05, y: -2 } : {}}
                   whileTap={!isSubscribing ? { scale: 0.95 } : {}}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
@@ -757,7 +757,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                       }`}
                     >
                       <svg
-                        className="w-5 h-5 text-blue-400 mr-3"
+                        className="w-5 h-5 text-green-400 mr-3"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -775,7 +775,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                       }`}
                     >
                       <svg
-                        className="w-5 h-5 text-blue-400 mr-3"
+                        className="w-5 h-5 text-green-400 mr-3"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -793,7 +793,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                       }`}
                     >
                       <svg
-                        className="w-5 h-5 text-blue-400 mr-3"
+                        className="w-5 h-5 text-green-400 mr-3"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -811,7 +811,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                       }`}
                     >
                       <svg
-                        className="w-5 h-5 text-blue-400 mr-3"
+                        className="w-5 h-5 text-green-400 mr-3"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -829,7 +829,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                       }`}
                     >
                       <svg
-                        className="w-5 h-5 text-blue-400 mr-3"
+                        className="w-5 h-5 text-green-400 mr-3"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -847,7 +847,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                       }`}
                     >
                       <svg
-                        className="w-5 h-5 text-blue-400 mr-3"
+                        className="w-5 h-5 text-green-400 mr-3"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -931,7 +931,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                     }
                   }}
                   disabled={isSubscribing}
-                  className="w-full bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isSubscribing ? (
                     <>
@@ -972,7 +972,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                 </p>
               </motion.div>
             </div>
-          </div>
+        </div>
         </motion.section>
       </main>
 
@@ -1025,7 +1025,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
               </svg>
             </button>
           </div>
-        </div>
+    </div>
       )}
     </motion.div>
   );

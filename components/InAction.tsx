@@ -135,7 +135,7 @@ const InAction: React.FC<InActionProps> = ({ isDark = true }) => {
         transition={{ duration: 0.6, delay: 0.2 }}
       >
         <h2 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tighter">
-          See <span className="text-orange-500">BetterApp</span> in action
+          See BetterApp in action
         </h2>
         <p className="max-w-2xl mx-auto mt-4 text-lg text-gray-400">
           Explore the interface and discover how easy it is to analyze
