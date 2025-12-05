@@ -761,6 +761,132 @@ app.post("/api/license/by-email", async (req, res) => {
 });
 
 /**
+ * Admin: Grant access to a user by email (creates subscription + license)
+ * POST /api/admin/grant-access
+ * Requires ADMIN_SECRET in headers
+ */
+app.post("/api/admin/grant-access", async (req, res) => {
+  try {
+    const adminSecret = req.headers["x-admin-secret"];
+    const expectedSecret = process.env.ADMIN_SECRET;
+
+    // Security: Only allow with valid admin secret
+    if (!expectedSecret || adminSecret !== expectedSecret) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized - Invalid admin secret",
+      });
+    }
+
+    const { email, plan = "yearly", durationDays = 365 } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: "Email is required",
+      });
+    }
+
+    const supabase = getSupabaseClient();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check if subscription already exists
+    const { data: existingSub } = await supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("email", normalizedEmail)
+      .eq("status", "active")
+      .single();
+
+    if (existingSub) {
+      return res.status(400).json({
+        success: false,
+        error: "User already has an active subscription",
+      });
+    }
+
+    // Create subscription record
+    const expiresAt = new Date(
+      Date.now() + durationDays * 24 * 60 * 60 * 1000
+    ).toISOString();
+
+    const { data: subData, error: subError } = await supabase
+      .from("subscriptions")
+      .insert({
+        email: normalizedEmail,
+        plan: plan,
+        status: "active",
+        current_period_end: expiresAt,
+        stripe_customer_id: `manual_${Date.now()}`,
+        stripe_subscription_id: `manual_${Date.now()}`,
+      })
+      .select()
+      .single();
+
+    if (subError) {
+      console.error("Error creating subscription:", subError);
+      return res.status(500).json({
+        success: false,
+        error: "Failed to create subscription",
+        details: subError.message,
+      });
+    }
+
+    // Generate license key
+    const licenseKey = `BA-${Date.now().toString(36).toUpperCase()}-${Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase()}`;
+
+    // Create license record
+    const { data: licenseData, error: licenseError } = await supabase
+      .from("licenses")
+      .insert({
+        license_key: licenseKey,
+        subscription_id: subData.id,
+        expires_at: expiresAt,
+        is_active: true,
+        user_email: normalizedEmail,
+      })
+      .select()
+      .single();
+
+    if (licenseError) {
+      console.error("Error creating license:", licenseError);
+      return res.status(500).json({
+        success: false,
+        error: "Failed to create license",
+        details: licenseError.message,
+      });
+    }
+
+    console.log(`✅ Admin granted access to ${normalizedEmail}`);
+
+    res.json({
+      success: true,
+      message: `Access granted to ${normalizedEmail}`,
+      subscription: {
+        id: subData.id,
+        email: normalizedEmail,
+        plan: plan,
+        expiresAt: expiresAt,
+      },
+      license: {
+        key: licenseKey,
+        expiresAt: expiresAt,
+      },
+    });
+  } catch (error) {
+    console.error("Error granting access:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to grant access",
+      message: error.message,
+    });
+  }
+});
+
+/**
  * Create Stripe checkout session
  * POST /api/stripe/checkout
  */

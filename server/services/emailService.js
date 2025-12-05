@@ -77,7 +77,7 @@ export async function sendLicenseKey(email, licenseKey, plan = "yearly") {
               <p>Your license key is:</p>
               <div class="license-box">${licenseKey}</div>
               
-              <p><strong>Plan:</strong> ${planText} (£120/year)</p>
+              <p><strong>Plan:</strong> ${planText} ($109/year)</p>
               <p><strong>Expires:</strong> ${expiryDate.toLocaleDateString(
                 "en-GB",
                 { day: "numeric", month: "long", year: "numeric" }
@@ -117,7 +117,7 @@ Welcome to BetterApp Premium!
 
 Your license key: ${licenseKey}
 
-Plan: ${planText} (£120/year)
+Plan: ${planText} ($109/year)
 Expires: ${expiryDate.toLocaleDateString("en-GB", {
         day: "numeric",
         month: "long",
