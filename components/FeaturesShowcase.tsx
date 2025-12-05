@@ -10,88 +10,274 @@ const chartData = [
   { value: 65 },
 ];
 
-// Mobile Phone Mockup
-const MobilePhoneMockup = ({
+// iPhone Mockup - Astro style with dynamic island
+const IPhoneMockup = ({
   imageSrc,
   alt,
 }: {
-  imageSrc: string;
+  imageSrc?: string;
   alt: string;
 }) => (
-  <div className="flex justify-center items-center w-full h-full">
-    <div className="relative w-full max-w-xs" style={{ aspectRatio: "9/19.5" }}>
+  <div className="relative mx-auto" style={{ width: "260px" }}>
+    {/* iPhone Frame */}
+    <div
+      className="relative bg-[#1a1a1a] rounded-[2.5rem] p-[6px]"
+      style={{
+        boxShadow: "0 0 0 2px #2a2a2a, 0 25px 50px -12px rgba(0, 0, 0, 0.6)",
+      }}
+    >
+      {/* Dynamic Island */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-6 bg-black rounded-full z-20" />
+
+      {/* Screen */}
       <div
-        className="absolute inset-0 bg-black rounded-3xl"
-        style={{
-          boxShadow:
-            "0 0 0 8px #1a1a1a, 0 0 0 10px #333, 0 20px 60px -15px rgba(0, 0, 0, 0.9)",
-        }}
+        className="relative bg-[#111213] rounded-[2.25rem] overflow-hidden"
+        style={{ aspectRatio: "9/19.5" }}
       >
-        <div className="absolute top-1 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-b-3xl z-20" />
-        <div
-          className="absolute bg-black overflow-hidden"
-          style={{
-            top: "12px",
-            left: "7px",
-            right: "7px",
-            bottom: "12px",
-            borderRadius: "24px",
-          }}
-        >
+        {imageSrc ? (
           <img
             src={imageSrc}
             alt={alt}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
           />
-        </div>
+        ) : (
+          /* Placeholder - App Store Search Screen */
+          <div className="w-full h-full bg-[#111213] p-4 pt-10">
+            {/* Status bar */}
+            <div className="flex justify-between items-center mb-4 px-1">
+              <span className="text-white text-[10px] font-semibold">9:41</span>
+              <div className="flex gap-1 items-center">
+                <svg
+                  className="w-3 h-3 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 3C6.95 3 3 6.95 3 12s3.95 9 9 9c.9 0 1.78-.13 2.6-.38-.18-.31-.27-.66-.27-1.02 0-.55.19-1.06.52-1.46-.83.27-1.72.43-2.65.43-4.14 0-7.5-3.36-7.5-7.5S7.86 4.57 12 4.57c1.66 0 3.19.54 4.43 1.44.24-.65.72-1.19 1.32-1.54C16.29 3.54 14.23 3 12 3z" />
+                </svg>
+                <svg
+                  className="w-3 h-3 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z" />
+                </svg>
+                <div className="flex items-center">
+                  <div className="w-5 h-2.5 border border-white rounded-sm relative">
+                    <div
+                      className="absolute inset-0.5 bg-white rounded-sm"
+                      style={{ width: "70%" }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Search bar */}
+            <div className="bg-[#1C1C1E] rounded-xl px-3 py-2.5 mb-3 flex items-center gap-2">
+              <svg
+                className="w-3.5 h-3.5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <span className="text-gray-400 text-xs">habit tracker</span>
+            </div>
+
+            {/* Tags */}
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {["productive", "game", "loop"].map((tag) => (
+                <span
+                  key={tag}
+                  className="bg-blue-500/20 text-blue-400 text-[10px] px-2 py-0.5 rounded-full"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+
+            {/* App result */}
+            <div className="bg-[#1C1C1E] rounded-xl p-3 mb-2">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl" />
+                <div className="flex-1">
+                  <div className="text-white text-xs font-medium">
+                    Habit Tracker - HabitKit
+                  </div>
+                  <div className="text-gray-400 text-[10px]">
+                    Streaks & Accountability
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                <span className="text-yellow-400">★★★★★</span>
+                <span>861</span>
+              </div>
+            </div>
+
+            {/* More apps */}
+            <div className="grid grid-cols-3 gap-2">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-[#1C1C1E] rounded-lg p-2 text-center"
+                >
+                  <div className="w-8 h-8 mx-auto bg-gradient-to-br from-green-400 to-blue-500 rounded-lg mb-1" />
+                  <div className="text-[8px] text-gray-400 truncate">
+                    App {i}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   </div>
 );
 
-// Desktop Mockup
-const DesktopMockup = ({
-  imageSrc,
-  alt,
-}: {
-  imageSrc: string;
-  alt: string;
-}) => (
-  <div className="flex justify-center items-center w-full h-full">
-    <div className="w-full max-w-lg">
-      <div className="bg-gradient-to-b from-zinc-700 to-zinc-800 rounded-t-3xl p-3 shadow-2xl">
-        <div className="flex items-center gap-3 mb-3 px-3">
-          <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-lg" />
-            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-lg" />
-            <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-lg" />
-          </div>
-          <div className="flex-1 text-center">
-            <p className="text-xs text-zinc-300 font-medium">BetterApp</p>
-          </div>
+// Mac Desktop Mockup - Clean Astro style
+const MacMockup = ({ imageSrc, alt }: { imageSrc?: string; alt: string }) => (
+  <div className="relative mx-auto w-full max-w-lg">
+    {/* Mac Frame */}
+    <div
+      className="bg-[#2a2a2a] rounded-lg overflow-hidden"
+      style={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}
+    >
+      {/* Title bar */}
+      <div className="bg-[#3a3a3a] px-3 py-2 flex items-center gap-2">
+        <div className="flex gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
         </div>
-        <div className="bg-zinc-900 rounded-xl overflow-hidden shadow-inner border border-zinc-800">
-          <img src={imageSrc} alt={alt} className="w-full h-auto" />
+        <div className="flex-1 text-center">
+          <span className="text-gray-400 text-[10px] font-medium">
+            BetterApp — Keywords
+          </span>
         </div>
       </div>
-      <div className="bg-gradient-to-b from-zinc-800 to-zinc-900 rounded-b-3xl px-12 py-2" />
-      <div className="flex justify-center items-end gap-12 px-8 pb-3">
-        <div
-          className="w-1 h-6 bg-gradient-to-b from-zinc-700 to-zinc-800 rounded"
-          style={{
-            transformOrigin: "center bottom",
-            transform: "skewY(-15deg)",
-          }}
-        />
-        <div
-          className="w-1 h-6 bg-gradient-to-b from-zinc-700 to-zinc-800 rounded"
-          style={{
-            transformOrigin: "center bottom",
-            transform: "skewY(15deg)",
-          }}
-        />
+
+      {/* Screen content */}
+      <div className="bg-[#111213]" style={{ aspectRatio: "16/10" }}>
+        {imageSrc ? (
+          <img
+            src={imageSrc}
+            alt={alt}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          /* Placeholder - ASO Dashboard */
+          <div className="w-full h-full p-3 flex gap-3">
+            {/* Sidebar */}
+            <div className="w-36 bg-[#1C1C1E] rounded-lg p-2 flex-shrink-0">
+              <div className="text-white text-[10px] font-semibold mb-2 px-1">
+                Apps
+              </div>
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className={`flex items-center gap-2 p-1.5 rounded-lg mb-1 ${
+                    i === 1 ? "bg-orange-500/20" : ""
+                  }`}
+                >
+                  <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className={`h-1.5 rounded ${
+                        i === 1 ? "bg-orange-400 w-12" : "bg-gray-600 w-10"
+                      }`}
+                    />
+                    <div className="h-1 bg-gray-700 rounded w-8 mt-0.5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Main content - Keywords table */}
+            <div className="flex-1 bg-[#1C1C1E] rounded-lg p-3 overflow-hidden">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-white text-xs font-semibold">
+                  Keywords
+                </span>
+                <div className="flex gap-1.5">
+                  <div className="bg-purple-600 text-white text-[8px] px-2 py-0.5 rounded">
+                    Add Keywords +
+                  </div>
+                  <div className="bg-orange-600 text-white text-[8px] px-2 py-0.5 rounded">
+                    Found 287 Suggestions
+                  </div>
+                </div>
+              </div>
+
+              {/* Table header */}
+              <div className="grid grid-cols-6 gap-1 text-[8px] text-gray-400 mb-1.5 px-1">
+                <span>Keyword</span>
+                <span>Last update</span>
+                <span>Popularity</span>
+                <span>Difficulty</span>
+                <span>Position</span>
+                <span>Apps</span>
+              </div>
+
+              {/* Table rows */}
+              {[
+                { kw: "curriculum vitae", pos: 20 },
+                { kw: "cv template", pos: 15 },
+                { kw: "resume ai", pos: 22 },
+                { kw: "resume template", pos: 25 },
+                { kw: "resume now", pos: 25 },
+                { kw: "ai resume builder", pos: 6 },
+              ].map((row, i) => (
+                <div
+                  key={row.kw}
+                  className="grid grid-cols-6 gap-1 text-[8px] text-white bg-[#111213] rounded p-1.5 mb-0.5 items-center"
+                >
+                  <span className="text-gray-300 truncate">{row.kw}</span>
+                  <span className="text-gray-500">A few sec...</span>
+                  <div className="bg-green-500/20 rounded-full h-1.5 w-10">
+                    <div
+                      className="bg-green-500 h-full rounded-full"
+                      style={{ width: `${50 + i * 8}%` }}
+                    />
+                  </div>
+                  <div className="bg-red-500/20 rounded-full h-1.5 w-10">
+                    <div
+                      className="bg-red-500 h-full rounded-full"
+                      style={{ width: `${30 + i * 5}%` }}
+                    />
+                  </div>
+                  <span className="text-orange-400 font-bold">
+                    {row.pos}{" "}
+                    <span className="text-green-400 text-[6px]">
+                      ↑{Math.floor(Math.random() * 5) + 1}
+                    </span>
+                  </span>
+                  <div className="flex -space-x-0.5">
+                    {[1, 2, 3, 4].map((j) => (
+                      <div
+                        key={j}
+                        className="w-3 h-3 bg-gradient-to-br from-gray-400 to-gray-600 rounded border border-[#1C1C1E]"
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
+
+    {/* Mac stand */}
+    <div className="mx-auto w-20 h-3 bg-gradient-to-b from-[#3a3a3a] to-[#2a2a2a] rounded-b" />
+    <div className="mx-auto w-28 h-1 bg-[#2a2a2a] rounded-b-full" />
   </div>
 );
 
@@ -105,112 +291,89 @@ const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ isDark }) => {
     animate: { opacity: 1, y: 0 },
   };
 
+  // Feature highlights for the research section
+  const highlights = [
+    {
+      icon: "🎯",
+      title: "Only the most accurate data",
+      desc: "BetterApp extracts keyword data from App Store search results and calculates how challenging it is to rank among the top apps.",
+    },
+    {
+      icon: "📊",
+      title: "Keep everything under control",
+      desc: "BetterApp daily updates keyword rankings, tracks position changes, and provides historical performance graphs for easy monitoring.",
+    },
+    {
+      icon: "🌍",
+      title: "All the stores you need",
+      desc: "BetterApp allows you to track keywords across multiple App Store regions where your app is available!",
+    },
+    {
+      icon: "🌐",
+      title: "AI-Powered Analysis",
+      desc: "Get intelligent insights about your competitors with AI that analyzes reviews, identifies weaknesses, and suggests improvements.",
+    },
+    {
+      icon: "💡",
+      title: "It suggests keywords for you",
+      desc: "BetterApp already knows which keywords your app is ranking for and also allows you to find out those of your competitors.",
+    },
+    {
+      icon: "⭐",
+      title: "Total control over reviews",
+      desc: "BetterApp analyzes reviews worldwide to discover what users love and hate, helping you build better features.",
+    },
+  ];
+
   return (
-    <section
-      className={`w-full py-20 md:py-28 ${
-        isDark ? "bg-zinc-950" : "bg-gray-50"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-16 md:mb-20">
-          <motion.h2
-            className={`text-4xl md:text-5xl lg:text-6xl font-bold max-w-4xl mx-auto text-balance leading-tight mb-4 ${
-              isDark ? "text-white" : "text-gray-900"
-            }`}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            Everything you need
-            <br />
-            to <span className="text-orange-400">grow your app</span>
-          </motion.h2>
-          <motion.p
-            className={`text-lg max-w-2xl mx-auto ${
-              isDark ? "text-zinc-400" : "text-gray-600"
-            }`}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-          >
-            BetterApp provides comprehensive tools to optimize your app's
-            performance and user engagement
-          </motion.p>
-        </div>
+    <>
+      {/* Section 1: Everything you need to grow your app */}
+      <section
+        className={`w-full py-20 md:py-28 ${
+          isDark ? "bg-[#111213]" : "bg-gray-50"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center mb-16 md:mb-20">
+            <motion.h2
+              className={`text-4xl md:text-5xl lg:text-6xl font-bold max-w-4xl mx-auto text-balance leading-tight mb-4 ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              Everything you need
+              <br />
+              to <span className="text-orange-400">grow your app</span>
+            </motion.h2>
+            <motion.p
+              className={`text-lg max-w-2xl mx-auto ${
+                isDark ? "text-gray-400" : "text-gray-600"
+              }`}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+            >
+              BetterApp provides comprehensive tools to optimize your app's
+              performance and user engagement
+            </motion.p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 md:auto-rows-fr">
-          {/* Feature 1: Stop Guessing */}
-          <motion.div
-            className={`group rounded-xl p-6 md:p-8 flex flex-col transition-all duration-300 ${
-              isDark
-                ? "bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 hover:border-zinc-700 hover:shadow-lg hover:shadow-orange-500/5"
-                : "bg-white border border-gray-200 shadow-sm hover:shadow-lg"
-            }`}
-            variants={fadeInUp}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-          >
-            <div className="mb-6">
-              <h3
-                className={`text-xl md:text-2xl font-bold mb-2 ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Stop guessing
-              </h3>
-              <p
-                className={`text-sm md:text-base leading-relaxed ${
-                  isDark ? "text-zinc-400" : "text-gray-600"
-                }`}
-              >
-                BetterApp tells you exactly which keywords your customers are
-                using; all you have to do is include them in your metadata.
-              </p>
-            </div>
-            <div className="flex justify-center items-center flex-1 min-h-64 md:min-h-96">
-              <div className="w-48 h-80 bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-3xl flex items-center justify-center border border-zinc-700">
-                <div className="text-center p-4">
-                  <div className="w-12 h-12 mx-auto mb-3 bg-orange-500/20 rounded-xl flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-orange-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                      />
-                    </svg>
-                  </div>
-                  <p className="text-white text-sm font-medium">ASO Keywords</p>
-                  <p className="text-zinc-500 text-xs mt-1">
-                    Discover what users search
-                  </p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Middle Column: Two stacked features */}
-          <div className="flex flex-col gap-6 md:gap-8">
-            {/* Feature 2: Results */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            {/* Feature 1: Stop Guessing - With iPhone mockup */}
             <motion.div
-              className={`group rounded-xl p-6 md:p-8 flex flex-col flex-1 transition-all duration-300 ${
+              className={`group rounded-2xl p-6 md:p-8 flex flex-col transition-all duration-300 ${
                 isDark
-                  ? "bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 hover:border-zinc-700 hover:shadow-lg hover:shadow-orange-500/5"
+                  ? "bg-[#1C1C1E] border border-gray-800 hover:border-gray-700"
                   : "bg-white border border-gray-200 shadow-sm hover:shadow-lg"
               }`}
               variants={fadeInUp}
               initial="initial"
               whileInView="animate"
               viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
             >
               <div className="mb-6">
                 <h3
@@ -218,82 +381,90 @@ const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ isDark }) => {
                     isDark ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  Results that make a difference
+                  Stop guessing
                 </h3>
                 <p
-                  className={`text-sm md:text-base leading-relaxed mb-6 ${
-                    isDark ? "text-zinc-400" : "text-gray-600"
+                  className={`text-sm md:text-base leading-relaxed ${
+                    isDark ? "text-gray-400" : "text-gray-600"
                   }`}
                 >
-                  90% of BetterApp users experience an increase in app
-                  impressions within the first week after updating their
-                  metadata.
+                  BetterApp tells you exactly which keywords your customers are
+                  using; all you have to do is include them in your metadata.
                 </p>
               </div>
-              <div className="flex-grow flex items-center justify-center">
-                <div className="w-full h-40">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <defs>
-                        <linearGradient
-                          id="colorGradient"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="0%"
-                            stopColor="#f97316"
-                            stopOpacity={1}
-                          />
-                          <stop
-                            offset="100%"
-                            stopColor="#f97316"
-                            stopOpacity={0.1}
-                          />
-                        </linearGradient>
-                      </defs>
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke="#f97316"
-                        strokeWidth={3}
-                        dot={false}
-                        isAnimationActive={true}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-              <div className="text-center">
-                <span className="text-3xl md:text-4xl font-bold text-orange-400">
-                  +35%
-                </span>
-                <p
-                  className={`text-sm mt-1 ${
-                    isDark ? "text-zinc-500" : "text-gray-500"
-                  }`}
-                >
-                  Average impression increase
-                </p>
+              <div className="flex justify-center items-center flex-1 py-4">
+                <IPhoneMockup alt="BetterApp mobile interface" />
               </div>
             </motion.div>
 
-            {/* Feature: Save hours */}
-            <motion.div
-              className={`group rounded-xl p-6 md:p-8 flex flex-col flex-1 transition-all duration-300 ${
-                isDark
-                  ? "bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 hover:border-zinc-700 hover:shadow-lg hover:shadow-orange-500/5"
-                  : "bg-white border border-gray-200 shadow-sm hover:shadow-lg"
-              }`}
-              variants={fadeInUp}
-              initial="initial"
-              whileInView="animate"
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-            >
-              <div>
+            {/* Middle Column: Results + Save hours */}
+            <div className="flex flex-col gap-6 md:gap-8">
+              {/* Feature 2: Results */}
+              <motion.div
+                className={`group rounded-2xl p-6 md:p-8 flex flex-col flex-1 transition-all duration-300 ${
+                  isDark
+                    ? "bg-[#1C1C1E] border border-gray-800 hover:border-gray-700"
+                    : "bg-white border border-gray-200 shadow-sm hover:shadow-lg"
+                }`}
+                variants={fadeInUp}
+                initial="initial"
+                whileInView="animate"
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+              >
+                <div className="mb-4">
+                  <h3
+                    className={`text-xl md:text-2xl font-bold mb-2 ${
+                      isDark ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    Results that make a difference
+                  </h3>
+                  <p
+                    className={`text-sm md:text-base leading-relaxed ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
+                    90% of BetterApp users experience an increase in app
+                    impressions within the first week after updating their
+                    metadata.
+                  </p>
+                </div>
+                <div className="flex-grow flex items-center justify-center">
+                  <div className="w-full h-32">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData}>
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#f97316"
+                          strokeWidth={3}
+                          dot={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <span className="text-3xl md:text-4xl font-bold text-orange-400">
+                    +35%
+                  </span>
+                </div>
+              </motion.div>
+
+              {/* Feature: Save hours + Keywords */}
+              <motion.div
+                className={`group rounded-2xl p-6 md:p-8 flex flex-col flex-1 transition-all duration-300 ${
+                  isDark
+                    ? "bg-[#1C1C1E] border border-gray-800 hover:border-gray-700"
+                    : "bg-white border border-gray-200 shadow-sm hover:shadow-lg"
+                }`}
+                variants={fadeInUp}
+                initial="initial"
+                whileInView="animate"
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+              >
                 <h3
                   className={`text-xl md:text-2xl font-bold mb-3 ${
                     isDark ? "text-white" : "text-gray-900"
@@ -302,110 +473,404 @@ const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ isDark }) => {
                   Save hours of work
                 </h3>
                 <p
-                  className={`text-sm md:text-base leading-relaxed ${
-                    isDark ? "text-zinc-400" : "text-gray-600"
+                  className={`text-sm md:text-base leading-relaxed mb-4 ${
+                    isDark ? "text-gray-400" : "text-gray-600"
                   }`}
                 >
                   You don't have to search for which keywords your app is
                   ranking for. BetterApp already knows.
                 </p>
-              </div>
-              <div className="mt-6 flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-green-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                {/* Keyword tags */}
+                <div className="flex flex-wrap gap-2 mt-auto">
+                  {[
+                    "Speak",
+                    "Practice",
+                    "Pronunciation",
+                    "Accent",
+                    "Voice",
+                    "Learn English",
+                  ].map((tag) => (
+                    <span
+                      key={tag}
+                      className={`px-3 py-1.5 rounded-full text-sm ${
+                        isDark
+                          ? "bg-gray-800 text-gray-300"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
-                <span
-                  className={`text-sm font-medium ${
-                    isDark ? "text-zinc-300" : "text-gray-700"
+              </motion.div>
+            </div>
+
+            {/* Feature 3: Unlimited - With Mac mockup */}
+            <motion.div
+              className={`group rounded-2xl p-6 md:p-8 flex flex-col transition-all duration-300 ${
+                isDark
+                  ? "bg-[#1C1C1E] border border-gray-800 hover:border-gray-700"
+                  : "bg-white border border-gray-200 shadow-sm hover:shadow-lg"
+              }`}
+              variants={fadeInUp}
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="mb-6">
+                <h3
+                  className={`text-xl md:text-2xl font-bold mb-2 ${
+                    isDark ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  Instant keyword discovery
-                </span>
+                  Unlimited
+                </h3>
+                <p
+                  className={`text-sm md:text-base leading-relaxed ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  BetterApp has a fixed annual subscription: if you need to
+                  track thousands of keywords, you can do so without paying
+                  anything extra.
+                </p>
+              </div>
+              <div className="flex justify-center items-center flex-1 py-4">
+                <MacMockup alt="BetterApp desktop dashboard" />
               </div>
             </motion.div>
           </div>
+        </div>
+      </section>
 
-          {/* Feature 3: Unlimited */}
+      {/* Section 2: The pleasure of research - Like Astro */}
+      <section
+        className={`w-full py-20 md:py-28 ${
+          isDark ? "bg-[#0a0a0b]" : "bg-white"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <motion.h2
+              className={`text-4xl md:text-5xl font-bold mb-4 ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              The pleasure of research
+            </motion.h2>
+            <motion.p
+              className={`text-lg max-w-2xl mx-auto ${
+                isDark ? "text-gray-400" : "text-gray-600"
+              }`}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+            >
+              Thanks to its minimal interface, you have all the truly important
+              information in a single view that allows you to quickly understand
+              how your app is performing.
+            </motion.p>
+          </div>
+
+          {/* Large Dashboard Screenshot */}
           <motion.div
-            className={`group rounded-xl p-6 md:p-8 flex flex-col transition-all duration-300 ${
-              isDark
-                ? "bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 hover:border-zinc-700 hover:shadow-lg hover:shadow-orange-500/5"
-                : "bg-white border border-gray-200 shadow-sm hover:shadow-lg"
-            }`}
-            variants={fadeInUp}
-            initial="initial"
-            whileInView="animate"
+            className="mb-16 max-w-5xl mx-auto"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.2 }}
           >
-            <div className="mb-6">
-              <h3
-                className={`text-xl md:text-2xl font-bold mb-2 ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
-              >
-                Unlimited
-              </h3>
-              <p
-                className={`text-sm md:text-base leading-relaxed ${
-                  isDark ? "text-zinc-400" : "text-gray-600"
-                }`}
-              >
-                BetterApp has a fixed annual subscription unlike all our
-                competitors: if you need to track thousands of keywords, you can
-                do so without paying anything extra.
-              </p>
-            </div>
-            <div className="flex justify-center items-center flex-1 min-h-64 md:min-h-96">
-              <div className="w-full max-w-sm">
-                <div className="bg-gradient-to-b from-zinc-700 to-zinc-800 rounded-t-2xl p-2 shadow-xl">
-                  <div className="flex items-center gap-2 mb-2 px-2">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 rounded-full bg-red-500" />
-                      <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                      <div className="w-2 h-2 rounded-full bg-green-500" />
+            {/* Mac Frame for full dashboard */}
+            <div
+              className="bg-[#2a2a2a] rounded-xl overflow-hidden mx-auto"
+              style={{ boxShadow: "0 25px 80px -20px rgba(0, 0, 0, 0.6)" }}
+            >
+              {/* Title bar */}
+              <div className="bg-[#3a3a3a] px-4 py-2.5 flex items-center">
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                  <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                  <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+                </div>
+                <div className="flex-1 text-center">
+                  <span className="text-gray-400 text-xs font-medium">
+                    BetterApp — ASO Dashboard
+                  </span>
+                </div>
+              </div>
+
+              {/* Dashboard content - Placeholder for actual screenshot */}
+              <div className="bg-[#111213] p-4" style={{ aspectRatio: "16/9" }}>
+                {/* This is a placeholder - replace with actual screenshot */}
+                <div className="w-full h-full flex gap-4">
+                  {/* Sidebar */}
+                  <div className="w-56 bg-[#1C1C1E] rounded-lg p-3 flex-shrink-0">
+                    <div className="text-white text-sm font-semibold mb-3">
+                      Apps
                     </div>
-                    <div className="flex-1 text-center">
-                      <p className="text-xs text-zinc-400">BetterApp</p>
-                    </div>
-                  </div>
-                  <div className="bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 p-3">
-                    <div className="space-y-2">
-                      {["fitness app", "workout", "health tracker"].map(
-                        (kw, i) => (
+                    {[
+                      {
+                        name: "Vocabulary - Learn wor...",
+                        icon: "V",
+                        active: true,
+                      },
+                      {
+                        name: "BoldVoice: Accent Train...",
+                        icon: "B",
+                        active: false,
+                      },
+                      {
+                        name: "SwiftScan AI Document...",
+                        icon: "S",
+                        active: false,
+                      },
+                      {
+                        name: "Weather Hi-Def Radar F...",
+                        icon: "W",
+                        active: false,
+                      },
+                      {
+                        name: "Golfshot Golf GPS Rang...",
+                        icon: "G",
+                        active: false,
+                      },
+                    ].map((app, i) => (
+                      <div
+                        key={i}
+                        className={`flex items-center gap-2 p-2 rounded-lg mb-1 ${
+                          app.active ? "bg-orange-500/20" : ""
+                        }`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold ${
+                            i === 0
+                              ? "bg-purple-600"
+                              : i === 1
+                              ? "bg-blue-600"
+                              : i === 2
+                              ? "bg-green-600"
+                              : i === 3
+                              ? "bg-red-600"
+                              : "bg-yellow-600"
+                          }`}
+                        >
+                          {app.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
                           <div
-                            key={kw}
-                            className="flex items-center justify-between bg-zinc-800/50 rounded px-2 py-1"
+                            className={`text-xs truncate ${
+                              app.active ? "text-orange-400" : "text-gray-300"
+                            }`}
                           >
-                            <span className="text-xs text-zinc-300">{kw}</span>
-                            <span className="text-xs text-orange-400">
-                              #{i + 1}
-                            </span>
+                            {app.name}
                           </div>
-                        )
-                      )}
+                          <div className="text-[10px] text-gray-500">
+                            iPhone ▼
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Main content */}
+                  <div className="flex-1 bg-[#1C1C1E] rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                        <span className="text-white font-semibold">
+                          Keywords
+                        </span>
+                        <span className="text-gray-500 text-sm">Notes</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="bg-purple-600 text-white text-xs px-3 py-1.5 rounded-lg font-medium">
+                          Add Keywords +
+                        </div>
+                        <div className="bg-orange-600 text-white text-xs px-3 py-1.5 rounded-lg font-medium">
+                          Found 287 Suggestions
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Table header */}
+                    <div className="grid grid-cols-7 gap-2 text-xs text-gray-400 mb-2 px-2 py-1">
+                      <span>Keyword</span>
+                      <span>Notes</span>
+                      <span>Last update</span>
+                      <span>Popularity</span>
+                      <span>Difficulty</span>
+                      <span>Position</span>
+                      <span>Apps in Ranking</span>
+                    </div>
+
+                    {/* Table rows */}
+                    {[
+                      {
+                        kw: "curriculum vitae",
+                        pop: 27,
+                        diff: 30,
+                        pos: 20,
+                        change: 7,
+                        apps: 271,
+                      },
+                      {
+                        kw: "cv template",
+                        pop: 15,
+                        diff: 42,
+                        pos: 15,
+                        change: 0,
+                        apps: 0,
+                      },
+                      {
+                        kw: "resume ai",
+                        pop: 22,
+                        diff: 44,
+                        pos: 122,
+                        change: 0,
+                        apps: 222,
+                      },
+                      {
+                        kw: "resume template",
+                        pop: 15,
+                        diff: 83,
+                        pos: 97,
+                        change: 78,
+                        apps: 0,
+                      },
+                      {
+                        kw: "resume now",
+                        pop: 25,
+                        diff: 97,
+                        pos: 71,
+                        change: 75,
+                        apps: 0,
+                      },
+                      {
+                        kw: "ai resume builder",
+                        pop: 33,
+                        diff: 58,
+                        pos: 48,
+                        change: 0,
+                        apps: 0,
+                      },
+                      {
+                        kw: "resume creator",
+                        pop: 6,
+                        diff: 80,
+                        pos: 43,
+                        change: 13,
+                        apps: 0,
+                      },
+                      {
+                        kw: "free resume maker",
+                        pop: 24,
+                        diff: 88,
+                        pos: 52,
+                        change: 0,
+                        apps: 227,
+                      },
+                    ].map((row, i) => (
+                      <div
+                        key={row.kw}
+                        className="grid grid-cols-7 gap-2 text-xs text-white bg-[#111213] rounded-lg p-2 mb-1 items-center"
+                      >
+                        <span className="text-gray-300">{row.kw}</span>
+                        <span className="text-gray-600">—</span>
+                        <span className="text-gray-500 text-[10px]">
+                          A few seconds...
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <div className="bg-green-500/20 rounded-full h-2 w-12">
+                            <div
+                              className="bg-green-500 h-full rounded-full"
+                              style={{ width: `${row.pop * 2}%` }}
+                            />
+                          </div>
+                          <span className="text-gray-400 text-[10px]">
+                            {row.pop}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="bg-red-500/20 rounded-full h-2 w-12">
+                            <div
+                              className="bg-red-500 h-full rounded-full"
+                              style={{ width: `${row.diff}%` }}
+                            />
+                          </div>
+                          <span className="text-gray-400 text-[10px]">
+                            {row.diff}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-orange-400 font-bold">
+                            {row.pos}
+                          </span>
+                          {row.change > 0 && (
+                            <span className="text-green-400 text-[10px]">
+                              ↑{row.change}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="flex -space-x-1">
+                            {[1, 2, 3, 4].map((j) => (
+                              <div
+                                key={j}
+                                className="w-4 h-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded border border-[#1C1C1E]"
+                              />
+                            ))}
+                          </div>
+                          <span className="text-gray-500 text-[10px]">
+                            +{row.apps || Math.floor(Math.random() * 200)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="bg-gradient-to-b from-zinc-800 to-zinc-900 rounded-b-2xl px-8 py-1" />
               </div>
             </div>
           </motion.div>
+
+          {/* Feature highlights grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {highlights.map((item, i) => (
+              <motion.div
+                key={item.title}
+                className="flex gap-4"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 * i }}
+              >
+                <div className="text-2xl flex-shrink-0">{item.icon}</div>
+                <div>
+                  <h4
+                    className={`font-semibold mb-1 ${
+                      isDark ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    {item.title}
+                  </h4>
+                  <p
+                    className={`text-sm ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
+                    {item.desc}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 };
 
