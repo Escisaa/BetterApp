@@ -1578,7 +1578,7 @@ const Dashboard: React.FC = () => {
                 {isStartingCheckout ? "Redirecting..." : "Start subscription"}
               </button>
               <p className="text-xs text-gray-500 text-center">
-                $108/year. One license per Mac. Cancel anytime from the portal.
+                £120/year (£10/month). Cancel anytime from the portal.
               </p>
               <div className="border-t border-gray-800 pt-4">
                 <button
@@ -1789,7 +1789,7 @@ ${analysisResult.marketOpportunities}
                   setShowLicenseModal(true);
                   setShowManualLicenseEntry(false);
                 }}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg shadow-lg hover:shadow-xl transition-all"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-orange-600 to-orange-700 rounded-lg shadow-lg hover:from-orange-700 hover:to-orange-800 transition-all"
               >
                 <svg
                   className="w-4 h-4"

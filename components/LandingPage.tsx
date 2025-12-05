@@ -409,7 +409,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   isDark ? "text-white" : "text-gray-900"
                 }`}
               >
-                Everything you need to{" "}
+                <span className="text-white">Everything you need to</span>{" "}
                 <span className="text-orange-400">understand the market</span>
               </h2>
               <p

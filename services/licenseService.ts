@@ -163,16 +163,18 @@ export async function fetchLicenseForEmail(
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      return {
-        success: false,
-        error: errorText || "No active license found for this email",
-      };
+      // Don't show error for 404 - just means no license found
+      if (response.status === 404) {
+        return { success: false };
+      }
+      return { success: false };
     }
 
     const data = await response.json();
     return data;
   } catch (error) {
-    return { success: false, error: "Failed to fetch license" };
+    // Network errors - silently fail, user just won't have license auto-loaded
+    console.warn("Could not fetch license by email:", error);
+    return { success: false };
   }
 }

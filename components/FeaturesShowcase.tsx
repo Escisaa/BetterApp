@@ -291,35 +291,67 @@ const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ isDark }) => {
     animate: { opacity: 1, y: 0 },
   };
 
+  // SVG Icons for highlights
+  const TargetIcon = () => (
+    <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+  const ChartIcon = () => (
+    <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  );
+  const GlobeIcon = () => (
+    <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+  const SparklesIcon = () => (
+    <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+    </svg>
+  );
+  const LightbulbIcon = () => (
+    <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+    </svg>
+  );
+  const StarIcon = () => (
+    <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+    </svg>
+  );
+
   // Feature highlights for the research section
   const highlights = [
     {
-      icon: "🎯",
+      icon: <TargetIcon />,
       title: "Only the most accurate data",
       desc: "BetterApp extracts keyword data from App Store search results and calculates how challenging it is to rank among the top apps.",
     },
     {
-      icon: "📊",
+      icon: <ChartIcon />,
       title: "Keep everything under control",
       desc: "BetterApp daily updates keyword rankings, tracks position changes, and provides historical performance graphs for easy monitoring.",
     },
     {
-      icon: "🌍",
+      icon: <GlobeIcon />,
       title: "All the stores you need",
       desc: "BetterApp allows you to track keywords across multiple App Store regions where your app is available!",
     },
     {
-      icon: "🌐",
+      icon: <SparklesIcon />,
       title: "AI-Powered Analysis",
       desc: "Get intelligent insights about your competitors with AI that analyzes reviews, identifies weaknesses, and suggests improvements.",
     },
     {
-      icon: "💡",
+      icon: <LightbulbIcon />,
       title: "It suggests keywords for you",
       desc: "BetterApp already knows which keywords your app is ranking for and also allows you to find out those of your competitors.",
     },
     {
-      icon: "⭐",
+      icon: <StarIcon />,
       title: "Total control over reviews",
       desc: "BetterApp analyzes reviews worldwide to discover what users love and hate, helping you build better features.",
     },
@@ -547,7 +579,7 @@ const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ isDark }) => {
       {/* Section 2: The pleasure of research - Like Astro */}
       <section
         className={`w-full py-20 md:py-28 ${
-          isDark ? "bg-[#0a0a0b]" : "bg-white"
+          isDark ? "bg-[#111213]" : "bg-white"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
@@ -848,7 +880,7 @@ const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ isDark }) => {
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 * i }}
               >
-                <div className="text-2xl flex-shrink-0">{item.icon}</div>
+                <div className="flex-shrink-0 w-10 h-10 bg-gray-800/50 rounded-lg flex items-center justify-center">{item.icon}</div>
                 <div>
                   <h4
                     className={`font-semibold mb-1 ${
