@@ -833,7 +833,9 @@ app.post("/api/admin/grant-access", async (req, res) => {
     }
 
     // Generate license key
-    const licenseKey = `BA-${Date.now().toString(36).toUpperCase()}-${Math.random()
+    const licenseKey = `BA-${Date.now()
+      .toString(36)
+      .toUpperCase()}-${Math.random()
       .toString(36)
       .substring(2, 8)
       .toUpperCase()}`;

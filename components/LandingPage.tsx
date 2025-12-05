@@ -216,7 +216,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
-              🚀 The #1 ASO tool for serious app developers
+              ✨ Made for indie iOS developers
             </motion.div>
             <motion.h1
               className={`text-5xl sm:text-6xl md:text-7xl font-extrabold ${
@@ -224,9 +224,9 @@ const LandingPage: React.FC<LandingPageProps> = ({
               } tracking-tighter leading-tight`}
               variants={fadeInUp}
             >
-              Outrank your competitors.
+              Understand your competition.
               <br />
-              <span className="text-orange-400">Dominate</span> the App Store.
+              Build better apps.
             </motion.h1>
             <motion.p
               className={`max-w-2xl mx-auto mt-6 text-lg ${
@@ -234,9 +234,8 @@ const LandingPage: React.FC<LandingPageProps> = ({
               }`}
               variants={fadeInUp}
             >
-              AI-powered competitor analysis, keyword tracking, and review insights 
-              that help you build apps users actually want. Join 500+ developers 
-              who increased their downloads by 35%+.
+              Chat with any app using AI, analyze competitor reviews, and
+              discover market opportunities that drive real revenue growth.
             </motion.p>
             <motion.div
               className="mt-10 flex flex-col items-center space-y-4"
@@ -410,8 +409,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   isDark ? "text-white" : "text-gray-900"
                 }`}
               >
-                <span className="text-white">Everything you need to</span>{" "}
-                <span className="text-orange-400">understand the market</span>
+                Everything you need to understand the market
               </h2>
               <p
                 className={`text-lg ${
@@ -709,8 +707,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                   isDark ? "text-white" : "text-gray-900"
                 }`}
               >
-                Simple, transparent{" "}
-                <span className="text-orange-400">pricing</span>
+                Simple, transparent pricing
               </h2>
               <p
                 className={`text-lg ${
@@ -733,41 +730,31 @@ const LandingPage: React.FC<LandingPageProps> = ({
                 whileHover={{ scale: 1.02, y: -4 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="inline-block bg-orange-500/10 text-orange-400 text-xs font-semibold px-3 py-1 rounded-full mb-4">
-                  MOST POPULAR
-                </div>
                 <h3
                   className={`text-2xl font-bold mb-2 ${
                     isDark ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  Pro Annual
+                  Single License
                 </h3>
                 <div className="mb-4">
                   <span
-                    className={`text-5xl font-extrabold ${
+                    className={`text-4xl font-extrabold ${
                       isDark ? "text-white" : "text-gray-900"
                     }`}
                   >
-                    $109
+                    $9
                   </span>
                   <span className={isDark ? "text-gray-400" : "text-gray-600"}>
-                    /year
+                    /month
                   </span>
                 </div>
                 <p
-                  className={`text-sm mb-2 ${
+                  className={`text-sm mb-6 ${
                     isDark ? "text-gray-400" : "text-gray-600"
                   }`}
                 >
-                  That's less than $10/month
-                </p>
-                <p
-                  className={`text-xs mb-6 ${
-                    isDark ? "text-green-400" : "text-green-600"
-                  }`}
-                >
-                  ✓ 14-day money-back guarantee
+                  Billed annually
                 </p>
                 <div className="mb-8">
                   <h4
@@ -999,7 +986,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                 </p>
               </motion.div>
             </div>
-        </div>
+          </div>
         </motion.section>
       </main>
 
@@ -1052,7 +1039,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
               </svg>
             </button>
           </div>
-    </div>
+        </div>
       )}
     </motion.div>
   );

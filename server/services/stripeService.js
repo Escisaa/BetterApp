@@ -166,7 +166,47 @@ export async function handleStripeWebhook(event) {
         ? new Date(subscription.current_period_end * 1000).toISOString()
         : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(); // Default to 1 year from now
 
-      // Create license
+      // Fetch customer email from Stripe BEFORE creating license
+      let customerEmail =
+        subscription.customer_email || subscription.metadata?.email;
+
+      // If no email in subscription, fetch from Stripe customer
+      if (!customerEmail && subscription.customer) {
+        try {
+          const Stripe = await getStripe();
+          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+          const customer = await stripe.customers.retrieve(
+            subscription.customer
+          );
+          if (customer && !customer.deleted && customer.email) {
+            customerEmail = customer.email;
+            console.log(
+              `✅ Fetched customer email from Stripe: ${customerEmail}`
+            );
+          }
+        } catch (customerError) {
+          console.warn(
+            "Failed to fetch customer from Stripe:",
+            customerError.message
+          );
+        }
+      }
+
+      // Normalize email
+      const normalizedEmail = customerEmail
+        ? customerEmail.trim().toLowerCase()
+        : "";
+
+      // Update subscription with email if we got one
+      if (normalizedEmail && !subData.email) {
+        await supabase
+          .from("subscriptions")
+          .update({ email: normalizedEmail })
+          .eq("id", subData.id);
+        console.log(`✅ Updated subscription with email: ${normalizedEmail}`);
+      }
+
+      // Create license with user_email
       const { data: licenseData, error: licenseError } = await supabase
         .from("licenses")
         .insert({
@@ -174,6 +214,7 @@ export async function handleStripeWebhook(event) {
           subscription_id: subData.id,
           expires_at: expiresAt,
           is_active: true,
+          user_email: normalizedEmail,
         })
         .select()
         .single();
@@ -196,41 +237,8 @@ export async function handleStripeWebhook(event) {
         return { success: false, error: licenseError.message };
       }
 
-      // Fetch customer email from Stripe
-      let customerEmail =
-        subscription.customer_email ||
-        subData.email ||
-        subscription.metadata?.email;
-
-      // If no email, fetch customer from Stripe
-      if (!customerEmail && subscription.customer) {
-        try {
-          const Stripe = await getStripe();
-          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-          const customer = await stripe.customers.retrieve(
-            subscription.customer
-          );
-          if (customer && !customer.deleted && customer.email) {
-            customerEmail = customer.email;
-            // Update subscription with email
-            await supabase
-              .from("subscriptions")
-              .update({ email: customerEmail })
-              .eq("id", subData.id);
-            console.log(
-              `✅ Fetched customer email from Stripe: ${customerEmail}`
-            );
-          }
-        } catch (customerError) {
-          console.warn(
-            "Failed to fetch customer from Stripe:",
-            customerError.message
-          );
-        }
-      }
-
       // Link subscription to user email if they signed up
-      if (customerEmail) {
+      if (normalizedEmail) {
         try {
           await supabase
             .from("users")
@@ -239,7 +247,7 @@ export async function handleStripeWebhook(event) {
               has_license: true,
               updated_at: new Date().toISOString(),
             })
-            .eq("email", customerEmail.toLowerCase());
+            .eq("email", normalizedEmail);
         } catch (userError) {
           // Ignore - user might not exist yet
           console.log("User not found for email linking (optional)");
@@ -247,31 +255,31 @@ export async function handleStripeWebhook(event) {
       }
 
       // Send license key to customer email
-      if (customerEmail) {
+      if (normalizedEmail) {
         console.log(
-          `📧 Attempting to send license email to ${customerEmail}...`
+          `📧 Attempting to send license email to ${normalizedEmail}...`
         );
         const emailResult = await sendLicenseKey(
-          customerEmail,
+          normalizedEmail,
           licenseKey,
           subData.plan
         );
         if (!emailResult.success) {
           console.error(
-            `❌ FAILED to send license email to ${customerEmail}:`,
+            `❌ FAILED to send license email to ${normalizedEmail}:`,
             emailResult.error
           );
           // CRITICAL: Always log the license key prominently
           console.error(`\n🚨 ===========================================`);
           console.error(`🚨 LICENSE KEY FOR MANUAL SENDING:`);
-          console.error(`🚨 Email: ${customerEmail}`);
+          console.error(`🚨 Email: ${normalizedEmail}`);
           console.error(`🚨 License Key: ${licenseKey}`);
           console.error(`🚨 Subscription: ${subscription.id}`);
           console.error(`🚨 ===========================================\n`);
           // Don't fail the webhook - license is still created
         } else {
           console.log(
-            `✅ License email sent successfully to ${customerEmail} (Message ID: ${emailResult.messageId})`
+            `✅ License email sent successfully to ${normalizedEmail} (Message ID: ${emailResult.messageId})`
           );
         }
       } else {

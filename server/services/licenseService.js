@@ -136,63 +136,93 @@ export async function getLicenseInfo(licenseKey) {
 
 /**
  * Get an active license for a user by email
+ * Checks both subscriptions table and licenses table for email
  */
 export async function getActiveLicenseByEmail(email) {
   try {
     const supabase = getSupabaseClient();
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Find active subscription for this email
+    console.log(`🔍 Looking for license for email: ${normalizedEmail}`);
+
+    // STRATEGY 1: Find active subscription by email
     const { data: subscription, error: subscriptionError } = await supabase
       .from("subscriptions")
       .select("id, plan, status, current_period_end, email, created_at")
       .eq("email", normalizedEmail)
+      .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
 
-    if (subscriptionError || !subscription) {
-      return null;
-    }
+    if (subscription && !subscriptionError) {
+      console.log(`✅ Found subscription by email: ${subscription.id}`);
 
-    if (subscription.status !== "active") {
-      return null;
-    }
+      // Check if subscription is still valid
+      if (subscription.current_period_end) {
+        const periodEnd = new Date(subscription.current_period_end);
+        if (periodEnd < new Date()) {
+          console.log(`❌ Subscription expired on ${periodEnd}`);
+          return null;
+        }
+      }
 
-    if (subscription.current_period_end) {
-      const periodEnd = new Date(subscription.current_period_end);
-      if (periodEnd < new Date()) {
-        return null;
+      // Find active license for this subscription
+      const { data: license, error: licenseError } = await supabase
+        .from("licenses")
+        .select("*")
+        .eq("subscription_id", subscription.id)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (license && !licenseError) {
+        const expiresAt = new Date(license.expires_at);
+        if (expiresAt >= new Date()) {
+          console.log(`✅ Found valid license: ${license.license_key}`);
+          return {
+            licenseKey: license.license_key,
+            plan: subscription.plan || "yearly",
+            status: subscription.status,
+            subscriptionId: subscription.id,
+            currentPeriodEnd: subscription.current_period_end,
+            expiresAt: license.expires_at,
+          };
+        }
       }
     }
 
-    // Find active license for this subscription
-    const { data: license, error: licenseError } = await supabase
+    // STRATEGY 2: Find license directly by user_email
+    console.log(`🔍 Trying direct license lookup by user_email...`);
+    const { data: directLicense, error: directError } = await supabase
       .from("licenses")
-      .select("*")
-      .eq("subscription_id", subscription.id)
+      .select("*, subscriptions(*)")
+      .eq("user_email", normalizedEmail)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
 
-    if (licenseError || !license) {
-      return null;
+    if (directLicense && !directError) {
+      const expiresAt = new Date(directLicense.expires_at);
+      if (expiresAt >= new Date()) {
+        console.log(
+          `✅ Found valid license by user_email: ${directLicense.license_key}`
+        );
+        return {
+          licenseKey: directLicense.license_key,
+          plan: directLicense.subscriptions?.plan || "yearly",
+          status: directLicense.subscriptions?.status || "active",
+          subscriptionId: directLicense.subscription_id,
+          currentPeriodEnd: directLicense.subscriptions?.current_period_end,
+          expiresAt: directLicense.expires_at,
+        };
+      }
     }
 
-    const expiresAt = new Date(license.expires_at);
-    if (expiresAt < new Date()) {
-      return null;
-    }
-
-    return {
-      licenseKey: license.license_key,
-      plan: subscription.plan || "yearly",
-      status: subscription.status,
-      subscriptionId: subscription.id,
-      currentPeriodEnd: subscription.current_period_end,
-      expiresAt: license.expires_at,
-    };
+    console.log(`❌ No valid license found for ${normalizedEmail}`);
+    return null;
   } catch (error) {
     console.error("Error getting license by email:", error);
     return null;
