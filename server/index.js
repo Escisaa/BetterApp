@@ -40,7 +40,8 @@ const allowedOrigins = [
   "http://localhost:3001", // Frontend dev server (alternative)
   "https://better-app-weld.vercel.app", // Vercel deployment
   "https://betterapp.pro", // Custom domain
-  /^https:\/\/better-app-.*\.vercel\.app$/, // Vercel preview deployments
+  /^https:\/\/better-.*\.vercel\.app$/, // All Vercel preview deployments
+  /^https:\/\/.*-escisaas-projects\.vercel\.app$/, // Escisaa's project previews
 ];
 
 app.use(

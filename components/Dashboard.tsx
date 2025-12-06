@@ -4592,53 +4592,64 @@ const KeywordsView: React.FC<{
               </thead>
               <tbody>
                 {trackedKeywords.length === 0 ? (
-                  // Empty state with helpful message
-                  <tr>
-                    <td colSpan={7} className="py-16 text-center">
-                      <div className="max-w-md mx-auto">
-                        <svg
-                          className="w-16 h-16 text-gray-600 mx-auto mb-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                          />
-                        </svg>
-                        <h3 className="text-lg font-semibold text-white mb-2">
-                          No Keywords Tracked Yet
-                        </h3>
-                        <p className="text-gray-400 text-sm mb-4">
-                          Start tracking keywords to monitor your app's App
-                          Store rankings and discoverability.
-                        </p>
-                        <div className="space-y-2 text-left max-w-sm mx-auto">
-                          <p className="text-gray-500 text-xs">
-                            <strong className="text-gray-300">
-                              Quick Start:
-                            </strong>
-                          </p>
-                          <ol className="list-decimal list-inside space-y-1 text-xs text-gray-400">
-                            <li>
-                              Click "Add Keywords +" to manually add keywords
-                            </li>
-                            <li>
-                              Or click "Found X Suggestions" to discover
-                              keywords your app already ranks for
-                            </li>
-                            <li>
-                              Click any keyword row to check its ranking
-                              position
-                            </li>
-                          </ol>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
+                  // Empty state with alternating row lines (like the screenshot)
+                  <>
+                    {/* Empty rows to show table structure */}
+                    {[...Array(10)].map((_, idx) => (
+                      <tr
+                        key={`empty-row-${idx}`}
+                        className={`border-b border-gray-800/50 ${
+                          idx % 2 === 0 ? "bg-[#1a1a1c]" : "bg-[#161618]"
+                        }`}
+                      >
+                        <td colSpan={7} className="py-5 px-4">
+                          {idx === 4 && (
+                            <div className="text-center">
+                              <svg
+                                className="w-12 h-12 text-gray-600 mx-auto mb-3"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                                />
+                              </svg>
+                              <h3 className="text-base font-semibold text-white mb-1">
+                                No Keywords Tracked Yet
+                              </h3>
+                              <p className="text-gray-500 text-sm mb-3">
+                                Start tracking keywords to monitor your app's
+                                App Store rankings and discoverability.
+                              </p>
+                              <div className="text-left max-w-xs mx-auto text-xs text-gray-400">
+                                <p className="text-gray-300 font-medium mb-1">
+                                  Quick Start:
+                                </p>
+                                <ol className="list-decimal list-inside space-y-0.5">
+                                  <li>
+                                    Click "Add Keywords +" to manually add
+                                    keywords
+                                  </li>
+                                  <li>
+                                    Or click "Found X Suggestions" to discover
+                                    keywords your app already ranks for
+                                  </li>
+                                  <li>
+                                    Click any keyword row to check its ranking
+                                    position
+                                  </li>
+                                </ol>
+                              </div>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </>
                 ) : (
                   <>
                     {trackedKeywords.map((keyword, idx) => (
