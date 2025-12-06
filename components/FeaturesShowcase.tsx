@@ -700,7 +700,7 @@ const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ isDark }) => {
               {/* Dashboard Screenshot */}
               <div className="bg-[#111213]">
                 <img
-                  src="/screenshot.landing.png"
+                  src="/screenshot2.png"
                   alt="BetterApp ASO Dashboard - Track keywords, analyze competitors, and optimize your App Store presence"
                   className="w-full h-auto"
                 />

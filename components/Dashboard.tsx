@@ -4297,83 +4297,129 @@ const KeywordsView: React.FC<{
           </div>
         )}
 
-        {/* Keywords Table - Like Try Astro */}
-        <div className="flex-1 overflow-auto">
-          {discoveredKeywords.length > 0 && (
-            <div className="mx-4 my-6 bg-[#1C1C1E] border border-gray-800 rounded-2xl p-6">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-white">
-                    Keywords you're already ranking for
-                  </h3>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Live data from the {selectedCountry} store. Add or copy
-                    these keywords to keep tracking their movement.
-                  </p>
+        {/* Discovered Keywords - Collapsible Section */}
+        {discoveredKeywords.length > 0 && (
+          <div className="mx-4 mb-4">
+            <details className="group" open>
+              <summary className="flex items-center justify-between cursor-pointer p-4 bg-[#1a1a1d] border border-[#2a2a2d] rounded-xl hover:bg-[#1f1f22] transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-green-600/20 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-4 h-4 text-green-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold text-sm">
+                      Keywords you're already ranking for
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      {discoveredKeywords.length} keywords found • Click to
+                      expand
+                    </p>
+                  </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-3">
                   <button
-                    onClick={handleCopyDiscoveredKeywords}
-                    className="px-4 py-2 text-sm rounded-lg border border-gray-700 text-gray-200 hover:bg-gray-800 transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleCopyDiscoveredKeywords();
+                    }}
+                    className="px-3 py-1.5 text-xs rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-800 transition-colors"
                   >
-                    {copiedDiscovered ? "Copied!" : "Copy list"}
+                    {copiedDiscovered ? "Copied!" : "Copy all"}
                   </button>
                   <button
-                    onClick={handleAddDiscoveredToTracking}
-                    className="px-4 py-2 text-sm rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleAddDiscoveredToTracking();
+                    }}
+                    className="px-3 py-1.5 text-xs rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
                   >
-                    Track top keywords
+                    Track all
                   </button>
+                  <svg
+                    className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
                 </div>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {discoveredKeywords.slice(0, 10).map((kw) => (
+              </summary>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {discoveredKeywords.map((kw) => (
                   <div
                     key={kw.keyword}
-                    className="p-4 rounded-xl border border-gray-800 bg-[#111213]"
+                    className="p-3 rounded-lg border border-[#2a2a2d] bg-[#131316] hover:bg-[#1a1a1d] transition-colors"
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-white font-semibold">{kw.keyword}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium text-sm truncate">
+                          {kw.keyword}
+                        </p>
                         <p className="text-xs text-gray-500">
                           Position:{" "}
-                          {kw.position ? `#${kw.position}` : "Not in top 25"}
+                          <span
+                            className={
+                              kw.position && kw.position <= 10
+                                ? "text-green-400 font-semibold"
+                                : "text-orange-400"
+                            }
+                          >
+                            {kw.position ? `#${kw.position}` : "25+"}
+                          </span>
                         </p>
                       </div>
                       <button
                         onClick={() =>
                           handleAddKeyword(kw.keyword, "extracted")
                         }
-                        className="text-xs font-semibold text-orange-400 hover:text-orange-300"
+                        className="text-xs font-medium text-orange-400 hover:text-orange-300 shrink-0"
                       >
-                        Track
+                        + Track
                       </button>
                     </div>
-                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-gray-400">
+                    <div className="mt-2 flex items-center gap-4 text-xs">
                       <div>
-                        <p className="text-gray-500">Popularity</p>
-                        <p className="text-white font-semibold">
-                          {kw.popularity}
-                        </p>
+                        <span className="text-gray-500">Pop: </span>
+                        <span className="text-gray-300">{kw.popularity}</span>
                       </div>
                       <div>
-                        <p className="text-gray-500">Difficulty</p>
-                        <p className="text-white font-semibold">
-                          {kw.difficulty}
-                        </p>
+                        <span className="text-gray-500">Diff: </span>
+                        <span className="text-gray-300">{kw.difficulty}</span>
                       </div>
                       <div>
-                        <p className="text-gray-500">Apps</p>
-                        <p className="text-white font-semibold">
+                        <span className="text-gray-500">Apps: </span>
+                        <span className="text-gray-300">
                           {kw.totalAppsInRanking}
-                        </p>
+                        </span>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            </details>
+          </div>
+        )}
+
+        {/* Keywords Table - Like Try Astro */}
+        <div className="flex-1 overflow-auto">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px]">
               <thead className="sticky top-0 bg-[#111213] z-10 border-b border-gray-800">
@@ -4592,26 +4638,29 @@ const KeywordsView: React.FC<{
               </thead>
               <tbody className="relative">
                 {trackedKeywords.length === 0 ? (
-                  // Empty state - clean alternating rows like Astro
+                  // Empty state - clean alternating rows with separate columns like Astro
                   <>
-                    {[...Array(18)].map((_, idx) => (
+                    {[...Array(20)].map((_, idx) => (
                       <tr
                         key={`empty-row-${idx}`}
                         className={
-                          idx % 2 === 0 ? "bg-[#17171a]" : "bg-[#1d1d21]"
+                          idx % 2 === 0 ? "bg-[#131315]" : "bg-[#18181b]"
                         }
                       >
-                        <td
-                          colSpan={7}
-                          className="h-11 border-b border-[#27272b]"
-                        ></td>
+                        <td className="h-11 border-b border-[#222225] border-r border-r-[#222225]"></td>
+                        <td className="h-11 border-b border-[#222225] border-r border-r-[#222225]"></td>
+                        <td className="h-11 border-b border-[#222225] border-r border-r-[#222225]"></td>
+                        <td className="h-11 border-b border-[#222225] border-r border-r-[#222225]"></td>
+                        <td className="h-11 border-b border-[#222225] border-r border-r-[#222225]"></td>
+                        <td className="h-11 border-b border-[#222225] border-r border-r-[#222225]"></td>
+                        <td className="h-11 border-b border-[#222225]"></td>
                       </tr>
                     ))}
                     {/* Centered message overlay */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="text-center pointer-events-auto bg-[#111213]/80 backdrop-blur-sm rounded-xl p-8">
+                      <div className="text-center pointer-events-auto bg-[#0f0f11]/95 backdrop-blur-sm rounded-xl p-8 border border-[#27272b]">
                         <svg
-                          className="w-14 h-14 text-gray-600 mx-auto mb-4"
+                          className="w-12 h-12 text-gray-600 mx-auto mb-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -4628,24 +4677,18 @@ const KeywordsView: React.FC<{
                         </h3>
                         <p className="text-gray-500 text-sm mb-4 max-w-sm">
                           Start tracking keywords to monitor your app's App
-                          Store rankings and discoverability.
+                          Store rankings.
                         </p>
                         <div className="text-left max-w-xs mx-auto text-xs text-gray-500">
                           <p className="text-gray-400 font-medium mb-2">
                             Quick Start:
                           </p>
                           <ol className="list-decimal list-inside space-y-1">
+                            <li>Click "Add Keywords +" to add keywords</li>
                             <li>
-                              Click "Add Keywords +" to manually add keywords
+                              Click "Found X Suggestions" to discover keywords
                             </li>
-                            <li>
-                              Or click "Found X Suggestions" to discover
-                              keywords
-                            </li>
-                            <li>
-                              Click any keyword row to check its ranking
-                              position
-                            </li>
+                            <li>Click any row to check its ranking position</li>
                           </ol>
                         </div>
                       </div>
