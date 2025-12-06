@@ -376,38 +376,6 @@ const LandingPage: React.FC<LandingPageProps> = ({
           </motion.div>
         </div>
 
-        {/* Hero Screenshot */}
-        <motion.div
-          className="max-w-6xl mx-auto px-4 sm:px-6 mt-16 mb-8"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-        >
-          <div
-            className="bg-[#2a2a2a] rounded-xl overflow-hidden mx-auto"
-            style={{ boxShadow: "0 25px 80px -20px rgba(0, 0, 0, 0.6)" }}
-          >
-            {/* Mac Title Bar */}
-            <div className="bg-[#3a3a3a] px-4 py-2.5 flex items-center">
-              <div className="flex gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-                <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-                <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-              </div>
-              <div className="flex-1 text-center">
-                <span className="text-gray-400 text-xs font-medium">
-                  BetterApp — ASO Dashboard
-                </span>
-              </div>
-            </div>
-            <img
-              src="/screenshot.landing.png"
-              alt="BetterApp Dashboard - Track keywords and analyze competitor apps"
-              className="w-full h-auto"
-            />
-          </div>
-        </motion.div>
-
         <MobileMockupSection isDark={isDark} />
         <InAction isDark={isDark} />
         <ChatDemo isDark={isDark} />

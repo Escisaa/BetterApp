@@ -4598,8 +4598,8 @@ const KeywordsView: React.FC<{
                     {[...Array(10)].map((_, idx) => (
                       <tr
                         key={`empty-row-${idx}`}
-                        className={`border-b border-gray-800/50 ${
-                          idx % 2 === 0 ? "bg-[#1a1a1c]" : "bg-[#161618]"
+                        className={`border-b border-gray-800/30 ${
+                          idx % 2 === 0 ? "bg-[#1C1C1E]" : "bg-[#111213]"
                         }`}
                       >
                         <td colSpan={7} className="py-5 px-4">
