@@ -4640,7 +4640,7 @@ const KeywordsView: React.FC<{
                 {trackedKeywords.length === 0 ? (
                   // Empty state - clean alternating rows with separate columns like Astro
                   <>
-                    {[...Array(20)].map((_, idx) => (
+                    {[...Array(50)].map((_, idx) => (
                       <tr
                         key={`empty-row-${idx}`}
                         className={
