@@ -592,3 +592,139 @@ export const extractCompetitorKeywords = async (
 
   return competitorKeywords.sort((a, b) => a.position - b.position);
 };
+
+/**
+ * Generate smart keyword recommendations based on tracked keywords
+ * Suggests related keywords and variations
+ */
+export const generateSmartRecommendations = (
+  trackedKeywords: string[]
+): Array<{
+  keyword: string;
+  reason: string;
+  basedOn: string;
+}> => {
+  const recommendations: Array<{
+    keyword: string;
+    reason: string;
+    basedOn: string;
+  }> = [];
+  const addedKeywords = new Set(trackedKeywords.map((k) => k.toLowerCase()));
+
+  for (const keyword of trackedKeywords) {
+    const words = keyword.toLowerCase().split(/\s+/);
+
+    // 1. Singular/Plural variations
+    for (const word of words) {
+      if (word.endsWith("s") && word.length > 3) {
+        const singular = word.slice(0, -1);
+        const newKeyword = keyword.toLowerCase().replace(word, singular);
+        if (!addedKeywords.has(newKeyword)) {
+          recommendations.push({
+            keyword: newKeyword,
+            reason: "Singular variation",
+            basedOn: keyword,
+          });
+          addedKeywords.add(newKeyword);
+        }
+      } else if (!word.endsWith("s") && word.length > 2) {
+        const plural = word + "s";
+        const newKeyword = keyword.toLowerCase().replace(word, plural);
+        if (!addedKeywords.has(newKeyword)) {
+          recommendations.push({
+            keyword: newKeyword,
+            reason: "Plural variation",
+            basedOn: keyword,
+          });
+          addedKeywords.add(newKeyword);
+        }
+      }
+    }
+
+    // 2. Common prefixes/suffixes
+    const prefixes = ["best", "free", "top", "easy", "simple", "pro"];
+    const suffixes = ["app", "tracker", "manager", "tool", "helper"];
+
+    for (const prefix of prefixes) {
+      if (!keyword.toLowerCase().startsWith(prefix)) {
+        const newKeyword = `${prefix} ${keyword.toLowerCase()}`;
+        if (!addedKeywords.has(newKeyword) && newKeyword.length <= 30) {
+          recommendations.push({
+            keyword: newKeyword,
+            reason: `"${prefix}" prefix often searched`,
+            basedOn: keyword,
+          });
+          addedKeywords.add(newKeyword);
+        }
+      }
+    }
+
+    // Only add suffix if keyword is short enough
+    if (words.length === 1) {
+      for (const suffix of suffixes) {
+        if (!keyword.toLowerCase().endsWith(suffix)) {
+          const newKeyword = `${keyword.toLowerCase()} ${suffix}`;
+          if (!addedKeywords.has(newKeyword) && newKeyword.length <= 30) {
+            recommendations.push({
+              keyword: newKeyword,
+              reason: `"${suffix}" suffix popular`,
+              basedOn: keyword,
+            });
+            addedKeywords.add(newKeyword);
+          }
+        }
+      }
+    }
+
+    // 3. Word order swap for 2-word keywords
+    if (words.length === 2) {
+      const swapped = `${words[1]} ${words[0]}`;
+      if (!addedKeywords.has(swapped)) {
+        recommendations.push({
+          keyword: swapped,
+          reason: "Word order variation",
+          basedOn: keyword,
+        });
+        addedKeywords.add(swapped);
+      }
+    }
+
+    // 4. Synonym-based suggestions (simple common synonyms)
+    const synonyms: Record<string, string[]> = {
+      track: ["monitor", "log", "record"],
+      tracker: ["monitor", "logger", "recorder"],
+      manage: ["organize", "control", "handle"],
+      manager: ["organizer", "controller", "planner"],
+      health: ["wellness", "fitness", "medical"],
+      fitness: ["workout", "exercise", "health"],
+      money: ["budget", "finance", "cash"],
+      budget: ["money", "expense", "finance"],
+      habit: ["routine", "daily", "goal"],
+      goal: ["target", "objective", "habit"],
+      photo: ["picture", "image", "camera"],
+      video: ["movie", "film", "clip"],
+      note: ["memo", "reminder", "document"],
+      task: ["todo", "checklist", "reminder"],
+      calendar: ["schedule", "planner", "agenda"],
+    };
+
+    for (const word of words) {
+      if (synonyms[word]) {
+        for (const synonym of synonyms[word].slice(0, 2)) {
+          const newKeyword = keyword.toLowerCase().replace(word, synonym);
+          if (!addedKeywords.has(newKeyword)) {
+            recommendations.push({
+              keyword: newKeyword,
+              reason: `Synonym: "${word}" → "${synonym}"`,
+              basedOn: keyword,
+            });
+            addedKeywords.add(newKeyword);
+          }
+        }
+      }
+    }
+  }
+
+  // Limit to top 20 recommendations
+  return recommendations.slice(0, 20);
+};
