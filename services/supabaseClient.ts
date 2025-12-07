@@ -8,10 +8,11 @@ const SUPABASE_URL =
   import.meta.env?.VITE_SUPABASE_URL ||
   "https://aziknzyxfrbhfpiljetg.supabase.co";
 
+// NOTE: Supabase anon key is designed to be public/client-safe.
+// Security is enforced via Row Level Security (RLS) policies in Supabase.
+// Best practice: Set VITE_SUPABASE_ANON_KEY in Vercel env vars.
 const SUPABASE_ANON_KEY =
   import.meta.env?.VITE_SUPABASE_ANON_KEY ||
-  // Fallback: This should match your SUPABASE_ANON_KEY from .env
-  // Update this if your key changes
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6aWtuenl4ZnJiaGZwaWxqZXRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMjUxMDksImV4cCI6MjA3ODgwMTEwOX0.rhTi6odfYjIFV6hJaHxHUYnb_reMNFvIcEU4dkKG7AQ";
 
 // Validate configuration
