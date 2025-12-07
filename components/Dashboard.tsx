@@ -44,6 +44,105 @@ import {
 import { APP_STORE_COUNTRIES, getCountryByCode } from "../services/countries";
 import { translateKeyword } from "../services/translationService";
 import { KEYWORD_CONFIG } from "../services/keywordConfig";
+
+/**
+ * Calculate Opportunity Score for a keyword
+ * Higher score = better keyword to target
+ * Formula: (Popularity × 0.4) + ((100 - Difficulty) × 0.4) + (Position bonus × 0.2)
+ */
+const calculateOpportunityScore = (
+  popularity?: number,
+  difficulty?: number,
+  position?: number | null
+): number | null => {
+  if (popularity === undefined || difficulty === undefined) return null;
+
+  // Popularity contribution (0-40 points) - higher is better
+  const popularityScore = (popularity / 100) * 40;
+
+  // Difficulty contribution (0-40 points) - lower difficulty = higher score
+  const difficultyScore = ((100 - difficulty) / 100) * 40;
+
+  // Position bonus (0-20 points) - better position = higher score
+  let positionScore = 0;
+  if (position && position > 0) {
+    if (position <= 5) positionScore = 20;
+    else if (position <= 10) positionScore = 15;
+    else if (position <= 25) positionScore = 10;
+    else positionScore = 5;
+  }
+
+  return Math.round(popularityScore + difficultyScore + positionScore);
+};
+
+/**
+ * Get opportunity score color and label
+ */
+const getOpportunityLabel = (
+  score: number
+): { color: string; label: string; bgColor: string } => {
+  if (score >= 70)
+    return {
+      color: "text-green-400",
+      label: "Excellent",
+      bgColor: "bg-green-500",
+    };
+  if (score >= 50)
+    return { color: "text-blue-400", label: "Good", bgColor: "bg-blue-500" };
+  if (score >= 30)
+    return {
+      color: "text-yellow-400",
+      label: "Medium",
+      bgColor: "bg-yellow-500",
+    };
+  return { color: "text-red-400", label: "Low", bgColor: "bg-red-500" };
+};
+
+/**
+ * Mini Sparkline component for position history
+ */
+const PositionSparkline: React.FC<{
+  history: Array<{ date: string; position: number }>;
+}> = ({ history }) => {
+  if (!history || history.length < 2) return null;
+
+  const last7 = history.slice(-7);
+  const positions = last7.map((h) => h.position);
+  const min = Math.min(...positions);
+  const max = Math.max(...positions);
+  const range = max - min || 1;
+
+  const width = 60;
+  const height = 20;
+  const points = positions
+    .map((pos, i) => {
+      const x = (i / (positions.length - 1)) * width;
+      // Invert Y because lower position (1) should be at top
+      const y = height - ((pos - min) / range) * height;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  // Determine trend color
+  const firstPos = positions[0];
+  const lastPos = positions[positions.length - 1];
+  const trendColor =
+    lastPos < firstPos ? "#22c55e" : lastPos > firstPos ? "#ef4444" : "#6b7280";
+
+  return (
+    <svg width={width} height={height} className="ml-2">
+      <polyline
+        points={points}
+        fill="none"
+        stroke={trendColor}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
 import {
   validateLicense,
   getStoredLicense,
@@ -4594,6 +4693,39 @@ const KeywordsView: React.FC<{
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-semibold text-gray-400">
                     <div className="flex items-center justify-end gap-1">
+                      <span className="text-orange-400">Opportunity</span>
+                      <button
+                        className="text-gray-500 hover:text-gray-400"
+                        title="Opportunity Score: Higher = better keyword to target. Based on Popularity, Difficulty, and Position."
+                      >
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <circle
+                            cx="10"
+                            cy="10"
+                            r="8"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                          />
+                          <text
+                            x="10"
+                            y="13"
+                            textAnchor="middle"
+                            fontSize="8"
+                            fill="currentColor"
+                          >
+                            i
+                          </text>
+                        </svg>
+                      </button>
+                    </div>
+                  </th>
+                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-400">
+                    <div className="flex items-center justify-end gap-1">
                       Position
                       <button className="text-gray-500 hover:text-gray-400">
                         <svg
@@ -4665,6 +4797,7 @@ const KeywordsView: React.FC<{
                           idx % 2 === 0 ? "bg-[#131315]" : "bg-[#18181b]"
                         }
                       >
+                        <td className="h-11 border-b border-[#222225] border-r border-r-[#222225]"></td>
                         <td className="h-11 border-b border-[#222225] border-r border-r-[#222225]"></td>
                         <td className="h-11 border-b border-[#222225] border-r border-r-[#222225]"></td>
                         <td className="h-11 border-b border-[#222225] border-r border-r-[#222225]"></td>
@@ -4866,6 +4999,45 @@ const KeywordsView: React.FC<{
                             <span className="text-gray-500 text-sm">—</span>
                           )}
                         </td>
+                        {/* Opportunity Score Column */}
+                        <td className="py-4 px-4 text-right">
+                          {(() => {
+                            const score = calculateOpportunityScore(
+                              keyword.popularity,
+                              keyword.difficulty,
+                              keyword.position
+                            );
+                            if (score === null) {
+                              return (
+                                <span className="text-gray-500 text-sm">—</span>
+                              );
+                            }
+                            const { color, label, bgColor } =
+                              getOpportunityLabel(score);
+                            return (
+                              <div className="flex items-center justify-end gap-2">
+                                <div className="flex flex-col items-end">
+                                  <span
+                                    className={`font-bold text-sm ${color}`}
+                                  >
+                                    {score}
+                                  </span>
+                                  <span
+                                    className={`text-[10px] ${color} opacity-75`}
+                                  >
+                                    {label}
+                                  </span>
+                                </div>
+                                <div className="w-12 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full ${bgColor}`}
+                                    style={{ width: `${score}%` }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </td>
                         <td className="py-4 px-4 text-right">
                           {isCheckingRanking === keyword.id ? (
                             <div className="flex items-center justify-end gap-2">
@@ -4894,22 +5066,66 @@ const KeywordsView: React.FC<{
                             </div>
                           ) : keyword.position ? (
                             <div className="flex items-center justify-end gap-1">
-                              <span className="text-white font-semibold">
+                              {/* Position Badge */}
+                              <div
+                                className={`px-2 py-0.5 rounded-md font-semibold text-sm ${
+                                  keyword.position <= 5
+                                    ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                                    : keyword.position <= 10
+                                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                    : keyword.position <= 25
+                                    ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                                    : "bg-gray-500/20 text-gray-400 border border-gray-500/30"
+                                }`}
+                              >
                                 #{keyword.position}
-                              </span>
+                              </div>
+                              {/* Position Change Indicator */}
                               {keyword.positionChange !== undefined &&
                                 keyword.positionChange !== 0 && (
-                                  <span
-                                    className={`text-xs font-medium ${
+                                  <div
+                                    className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-bold ${
                                       keyword.positionChange > 0
-                                        ? "text-green-400"
-                                        : "text-red-400"
+                                        ? "bg-green-500/20 text-green-400"
+                                        : "bg-red-500/20 text-red-400"
                                     }`}
                                   >
-                                    {keyword.positionChange > 0 ? "↑" : "↓"}
+                                    {keyword.positionChange > 0 ? (
+                                      <svg
+                                        className="w-3 h-3"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                    ) : (
+                                      <svg
+                                        className="w-3 h-3"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                    )}
                                     {Math.abs(keyword.positionChange)}
-                                  </span>
+                                  </div>
                                 )}
+                              {/* Mini Sparkline Chart */}
+                              {keyword.history &&
+                                keyword.history.length > 1 && (
+                                  <PositionSparkline
+                                    history={keyword.history}
+                                  />
+                                )}
+                              {/* Chart button for detailed view */}
                               {keyword.history &&
                                 keyword.history.length > 1 && (
                                   <button
@@ -4921,7 +5137,7 @@ const KeywordsView: React.FC<{
                                           : keyword.id
                                       );
                                     }}
-                                    className="ml-2 text-gray-400 hover:text-orange-400 transition-colors"
+                                    className="ml-1 text-gray-500 hover:text-orange-400 transition-colors"
                                     title="View position history"
                                   >
                                     <svg
