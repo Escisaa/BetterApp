@@ -4320,11 +4320,11 @@ const KeywordsView: React.FC<{
                   </div>
                   <div>
                     <h3 className="text-white font-semibold text-sm">
-                      Keywords you're already ranking for
+                      Keywords this app ranks for
                     </h3>
                     <p className="text-xs text-gray-500">
-                      {discoveredKeywords.length} keywords found • Click to
-                      expand
+                      {discoveredKeywords.length} keywords • Copy these to use
+                      in your app
                     </p>
                   </div>
                 </div>
@@ -4332,11 +4332,18 @@ const KeywordsView: React.FC<{
                   <button
                     onClick={(e) => {
                       e.preventDefault();
-                      handleCopyDiscoveredKeywords();
+                      // Copy as comma-separated for App Store keyword field
+                      const keywordsForAppStore = discoveredKeywords
+                        .slice(0, 15)
+                        .map((k) => k.keyword)
+                        .join(", ");
+                      navigator.clipboard.writeText(keywordsForAppStore);
+                      setCopiedDiscovered(true);
+                      setTimeout(() => setCopiedDiscovered(false), 2000);
                     }}
-                    className="px-3 py-1.5 text-xs rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-800 transition-colors"
+                    className="px-3 py-1.5 text-xs rounded-lg border border-green-700 text-green-400 hover:bg-green-900/30 transition-colors"
                   >
-                    {copiedDiscovered ? "Copied!" : "Copy all"}
+                    {copiedDiscovered ? "✓ Copied!" : "Copy for App Store"}
                   </button>
                   <button
                     onClick={(e) => {
@@ -4362,6 +4369,17 @@ const KeywordsView: React.FC<{
                   </svg>
                 </div>
               </summary>
+
+              {/* Tip for users */}
+              <div className="mt-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
+                <p className="text-xs text-blue-300">
+                  <span className="font-semibold">💡 Tip:</span> These are
+                  keywords this competitor ranks for. Click "Copy for App Store"
+                  to get a comma-separated list you can paste into your app's
+                  keyword field in App Store Connect.
+                </p>
+              </div>
+
               <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {discoveredKeywords.map((kw) => (
                   <div
