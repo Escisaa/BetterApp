@@ -485,7 +485,10 @@ const FeaturesShowcase: React.FC<FeaturesShowcaseProps> = ({ isDark }) => {
                 </p>
               </div>
               <div className="flex justify-center items-center flex-1 py-4">
-                <IPhoneMockup alt="BetterApp mobile interface" />
+                <IPhoneMockup
+                  imageSrc="/mobile-screen.png"
+                  alt="BetterApp mobile interface showing keyword search"
+                />
               </div>
             </motion.div>
 
