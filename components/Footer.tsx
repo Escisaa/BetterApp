@@ -12,7 +12,7 @@ const Footer: React.FC<FooterProps> = ({ isDark = true }) => {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <div className="flex justify-end">
+        <div className="flex flex-col items-center justify-center space-y-2">
           <div className="flex items-center space-x-4 text-sm">
             <a
               href="#"
@@ -38,6 +38,11 @@ const Footer: React.FC<FooterProps> = ({ isDark = true }) => {
               Privacy
             </a>
           </div>
+          <p
+            className={`text-xs ${isDark ? "text-gray-600" : "text-gray-400"}`}
+          >
+            © {new Date().getFullYear()} BetterApp. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
