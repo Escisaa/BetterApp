@@ -38,6 +38,19 @@ const Footer: React.FC<FooterProps> = ({ isDark = true }) => {
             >
               Privacy
             </Link>
+            <span className={isDark ? "text-gray-600" : "text-gray-400"}>
+              •
+            </span>
+            <a
+              href="mailto:support@betterapp.pro"
+              className={`hover:underline ${
+                isDark
+                  ? "text-gray-400 hover:text-gray-300"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Support
+            </a>
           </div>
           <p
             className={`text-xs ${isDark ? "text-gray-600" : "text-gray-400"}`}
