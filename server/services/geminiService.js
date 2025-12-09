@@ -156,7 +156,7 @@ export async function analyzeReviewsWithAI(appName, reviews) {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const response = await getAI().models.generateContent({
-        model: "gemini-1.5-pro",
+        model: "gemini-2.0-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -225,7 +225,7 @@ Tags:`;
 
   try {
     const response = await getAI().models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -308,7 +308,7 @@ Respond naturally and helpfully:`;
 
   try {
     const response = await getAI().models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         maxOutputTokens: 500,
@@ -444,7 +444,7 @@ export async function analyzeCompetitiveIntelligence(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const response = await getAI().models.generateContent({
-        model: "gemini-1.5-pro",
+        model: "gemini-2.0-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",

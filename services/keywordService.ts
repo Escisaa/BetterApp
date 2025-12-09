@@ -95,81 +95,151 @@ export const generateKeywordSuggestions = async (
 
 /**
  * Calculate estimated popularity (0-100) based on search results count
- * Improved algorithm: More results = higher popularity
+ * Enhanced algorithm with more variance for better differentiation
  * Note: Without Apple Search Ads API, this is an estimation based on search volume
  */
-const calculatePopularity = (resultCount: number): number => {
+const calculatePopularity = (resultCount: number, keyword?: string): number => {
   if (resultCount === 0) return 0;
 
-  // Improved normalization based on typical App Store search volumes:
-  // 0-20 results = 0-25 (very niche)
-  // 20-100 results = 25-50 (low-medium)
-  // 100-500 results = 50-75 (medium-high)
-  // 500+ results = 75-100 (very popular)
+  // Base score from result count with wider distribution
+  let baseScore = 0;
+  if (resultCount < 10) {
+    baseScore = (resultCount / 10) * 15; // 0-15
+  } else if (resultCount < 25) {
+    baseScore = 15 + ((resultCount - 10) / 15) * 15; // 15-30
+  } else if (resultCount < 50) {
+    baseScore = 30 + ((resultCount - 25) / 25) * 20; // 30-50
+  } else if (resultCount < 100) {
+    baseScore = 50 + ((resultCount - 50) / 50) * 15; // 50-65
+  } else if (resultCount < 200) {
+    baseScore = 65 + ((resultCount - 100) / 100) * 15; // 65-80
+  } else {
+    baseScore = Math.min(100, 80 + ((resultCount - 200) / 300) * 20); // 80-100
+  }
 
-  if (resultCount < 20) {
-    return Math.min(25, (resultCount / 20) * 25);
+  // Keyword characteristics modifier for more variance
+  let modifier = 0;
+  if (keyword) {
+    const wordCount = keyword.split(/\s+/).length;
+    const charCount = keyword.length;
+
+    // Single words are typically more popular (broader)
+    if (wordCount === 1 && charCount <= 10) {
+      modifier += 8;
+    }
+    // Long-tail keywords (3+ words) are less popular but more specific
+    if (wordCount >= 3) {
+      modifier -= 5;
+    }
+    // Very short keywords tend to be more popular
+    if (charCount <= 5) {
+      modifier += 5;
+    }
+    // Common app-related terms boost
+    const popularTerms = [
+      "app",
+      "game",
+      "free",
+      "photo",
+      "video",
+      "music",
+      "health",
+      "fitness",
+      "social",
+      "chat",
+    ];
+    if (popularTerms.some((term) => keyword.toLowerCase().includes(term))) {
+      modifier += 7;
+    }
   }
-  if (resultCount < 100) {
-    return 25 + ((resultCount - 20) / 80) * 25;
-  }
-  if (resultCount < 500) {
-    return 50 + ((resultCount - 100) / 400) * 25;
-  }
-  return Math.min(100, 75 + ((resultCount - 500) / 1000) * 25);
+
+  return Math.max(0, Math.min(100, Math.round(baseScore + modifier)));
 };
 
 /**
  * Calculate estimated difficulty (0-100) based on competing apps
- * Improved algorithm: Higher ratings/reviews of competitors = higher difficulty
+ * Enhanced algorithm with better differentiation based on competitor strength
  * Note: Without Apple Search Ads data, this estimates based on competitor strength
  */
-const calculateDifficulty = (competingApps: App[]): number => {
-  if (competingApps.length === 0) return 0;
+const calculateDifficulty = (
+  competingApps: App[],
+  keyword?: string
+): number => {
+  if (competingApps.length === 0) return 5; // Minimum difficulty
 
-  const avgRating =
-    competingApps.reduce((sum, app) => sum + app.rating, 0) /
-    competingApps.length;
-  const avgReviews =
-    competingApps.reduce((sum, app) => {
-      const reviews = parseFloat(app.reviewsCount.replace(/[km]/gi, "")) || 0;
-      const multiplier = app.reviewsCount.toLowerCase().includes("k")
-        ? 1000
-        : app.reviewsCount.toLowerCase().includes("m")
-        ? 1000000
-        : 1;
-      return sum + reviews * multiplier;
-    }, 0) / competingApps.length;
+  // Parse review counts properly
+  const parseReviewCount = (reviewStr: string): number => {
+    const clean = reviewStr.replace(/[,\s]/g, "").toLowerCase();
+    const num = parseFloat(clean.replace(/[km]/g, "")) || 0;
+    if (clean.includes("m")) return num * 1000000;
+    if (clean.includes("k")) return num * 1000;
+    return num;
+  };
 
-  // Improved normalization:
-  // Count score: 0-5 apps = 0-20, 5-20 apps = 20-50, 20-50 apps = 50-80, 50+ = 80-100
-  let countScore = 0;
-  if (competingApps.length < 5) {
-    countScore = (competingApps.length / 5) * 20;
-  } else if (competingApps.length < 20) {
-    countScore = 20 + ((competingApps.length - 5) / 15) * 30;
-  } else if (competingApps.length < 50) {
-    countScore = 50 + ((competingApps.length - 20) / 30) * 30;
+  // Calculate metrics
+  const ratings = competingApps.map((app) => app.rating || 0);
+  const reviews = competingApps.map((app) =>
+    parseReviewCount(app.reviewsCount || "0")
+  );
+
+  const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+  const maxRating = Math.max(...ratings);
+  const avgReviews = reviews.reduce((a, b) => a + b, 0) / reviews.length;
+  const maxReviews = Math.max(...reviews);
+  const totalReviews = reviews.reduce((a, b) => a + b, 0);
+
+  // Competition density score (how many strong competitors)
+  let densityScore = 0;
+  if (competingApps.length <= 3) {
+    densityScore = competingApps.length * 5; // 0-15
+  } else if (competingApps.length <= 10) {
+    densityScore = 15 + (competingApps.length - 3) * 3; // 15-36
+  } else if (competingApps.length <= 25) {
+    densityScore = 36 + (competingApps.length - 10) * 1.5; // 36-58
   } else {
-    countScore = Math.min(100, 80 + ((competingApps.length - 50) / 50) * 20);
+    densityScore = Math.min(70, 58 + (competingApps.length - 25) * 0.5); // 58-70
   }
 
-  // Rating score: 0-3 stars = 0-15, 3-4 stars = 15-25, 4-5 stars = 25-30
-  const ratingScore =
-    avgRating < 3
-      ? (avgRating / 3) * 15
-      : avgRating < 4
-      ? 15 + ((avgRating - 3) / 1) * 10
-      : 25 + ((avgRating - 4) / 1) * 5;
+  // Quality score based on ratings (how good are competitors)
+  let qualityScore = 0;
+  if (avgRating >= 4.5) {
+    qualityScore = 20 + (avgRating - 4.5) * 10; // 20-25
+  } else if (avgRating >= 4.0) {
+    qualityScore = 12 + (avgRating - 4.0) * 16; // 12-20
+  } else if (avgRating >= 3.5) {
+    qualityScore = 5 + (avgRating - 3.5) * 14; // 5-12
+  } else {
+    qualityScore = avgRating * 1.4; // 0-5
+  }
 
-  // Reviews score: logarithmic scale, max 30 points
-  const reviewsScore = Math.min(30, (Math.log10(avgReviews + 1) / 7) * 30);
+  // Authority score based on reviews (how established are competitors)
+  let authorityScore = 0;
+  if (maxReviews > 100000) {
+    authorityScore = 20 + Math.min(15, Math.log10(maxReviews / 100000) * 10);
+  } else if (maxReviews > 10000) {
+    authorityScore = 12 + ((maxReviews - 10000) / 90000) * 8;
+  } else if (maxReviews > 1000) {
+    authorityScore = 5 + ((maxReviews - 1000) / 9000) * 7;
+  } else {
+    authorityScore = (maxReviews / 1000) * 5;
+  }
 
-  // Weighted combination: 40% count, 30% rating, 30% reviews
-  return Math.min(
-    100,
-    countScore * 0.4 + ratingScore * 0.3 + reviewsScore * 0.3
-  );
+  // Keyword specificity modifier
+  let modifier = 0;
+  if (keyword) {
+    const wordCount = keyword.split(/\s+/).length;
+    // Long-tail keywords are easier to rank for
+    if (wordCount >= 3) modifier -= 8;
+    if (wordCount >= 4) modifier -= 5;
+    // Short generic keywords are harder
+    if (wordCount === 1 && keyword.length <= 6) modifier += 10;
+  }
+
+  // Combine scores with weights
+  const rawScore =
+    densityScore * 0.35 + qualityScore * 0.35 + authorityScore * 0.3 + modifier;
+
+  return Math.max(5, Math.min(100, Math.round(rawScore)));
 };
 
 /**
@@ -209,9 +279,9 @@ export const checkKeywordRanking = async (
         .filter((app) => app.id !== appId)
         .slice(0, KEYWORD_CONFIG.MAX_COMPETING_APPS_FOR_DIFFICULTY);
 
-      // Calculate metrics
-      const popularity = calculatePopularity(results.length);
-      const difficulty = calculateDifficulty(competingApps);
+      // Calculate metrics with keyword context for better variance
+      const popularity = calculatePopularity(results.length, keyword);
+      const difficulty = calculateDifficulty(competingApps, keyword);
 
       return {
         position: positionNum,
@@ -435,14 +505,14 @@ export const discoverRankingKeywords = async (
           const competingApps = results
             .filter((a) => a.id !== app.id)
             .slice(0, KEYWORD_CONFIG.MAX_COMPETING_APPS_FOR_DIFFICULTY);
-          const popularity = calculatePopularity(results.length);
-          const difficulty = calculateDifficulty(competingApps);
+          const popularity = calculatePopularity(results.length, keyword);
+          const difficulty = calculateDifficulty(competingApps, keyword);
 
           discoveredKeywords.push({
             keyword,
             position: positionNum,
-            popularity: Math.round(popularity),
-            difficulty: Math.round(difficulty),
+            popularity,
+            difficulty,
             totalAppsInRanking: results.length,
           });
           success = true;
@@ -549,14 +619,14 @@ export const extractCompetitorKeywords = async (
           const competingApps = results
             .filter((a) => a.id !== competitorApp.id)
             .slice(0, KEYWORD_CONFIG.MAX_COMPETING_APPS_FOR_DIFFICULTY);
-          const popularity = calculatePopularity(results.length);
-          const difficulty = calculateDifficulty(competingApps);
+          const popularity = calculatePopularity(results.length, keyword);
+          const difficulty = calculateDifficulty(competingApps, keyword);
 
           competitorKeywords.push({
             keyword,
             position: positionNum,
-            popularity: Math.round(popularity),
-            difficulty: Math.round(difficulty),
+            popularity,
+            difficulty,
           });
         }
         success = true;

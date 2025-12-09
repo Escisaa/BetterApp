@@ -16,6 +16,8 @@ import { Analytics } from "@vercel/analytics/react";
 import Dashboard from "./components/Dashboard";
 import LandingPage from "./components/LandingPage";
 import Auth from "./components/Auth";
+import Terms from "./components/Terms";
+import Privacy from "./components/Privacy";
 import { supabase } from "./services/supabaseClient";
 import { checkLicenseStatus } from "./services/licenseService";
 
@@ -181,6 +183,8 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<LandingPageWrapper />} />
             <Route path="/auth" element={<AuthWrapper />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route
               path="/dashboard"
               element={
