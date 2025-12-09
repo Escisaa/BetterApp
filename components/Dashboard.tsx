@@ -28,6 +28,7 @@ import {
   removeKeyword,
   updateKeyword,
   StoredKeyword,
+  initializeStorage,
 } from "../services/storageService";
 import {
   extractKeywordsFromMetadata,
@@ -1084,6 +1085,11 @@ const Dashboard: React.FC = () => {
         const email = session?.user?.email || null;
         if (email) {
           setResendEmail((prev) => prev || email);
+        }
+
+        // Initialize cloud sync if logged in
+        if (session?.user) {
+          await initializeStorage();
         }
 
         let valid = await checkLicenseStatus();

@@ -1,5 +1,17 @@
-// Local storage service for Tracked Apps and Analysis History
+// Storage service with cloud sync support
+// Uses localStorage as cache, syncs to Supabase when logged in
 import { App, AnalysisResult } from "../types";
+import {
+  syncTrackedAppsToCloud,
+  syncKeywordsToCloud,
+  syncAnalysisToCloud,
+  syncSettingsToCloud,
+  deleteTrackedAppFromCloud,
+  deleteKeywordFromCloud,
+  deleteAnalysisFromCloud,
+  performFullSync,
+  fetchSettingsFromCloud,
+} from "./cloudSyncService";
 
 export interface TrackedApp {
   id: string;
@@ -15,7 +27,6 @@ export interface AppSnapshot {
   reviewsCount: string;
   version?: string;
   price?: number;
-  // Add more fields as needed
 }
 
 export interface SavedAnalysis {
@@ -33,7 +44,105 @@ const STORAGE_KEYS = {
   ANALYSIS_HISTORY: "appscope_analysis_history",
   SELECTED_COUNTRY: "appscope_selected_country",
   KEYWORDS: "appscope_keywords",
+  LAST_SYNC: "appscope_last_sync",
 };
+
+// Debounced cloud sync (waits 2s after last change)
+let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+const SYNC_DELAY = 2000;
+
+const debouncedCloudSync = () => {
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(async () => {
+    try {
+      const apps = getTrackedApps();
+      const keywords = getAllKeywords();
+      const analyses = getAnalysisHistory();
+
+      await Promise.all([
+        syncTrackedAppsToCloud(apps),
+        syncKeywordsToCloud(keywords),
+        syncAnalysisToCloud(analyses),
+      ]);
+
+      localStorage.setItem(STORAGE_KEYS.LAST_SYNC, new Date().toISOString());
+      console.log("☁️ Cloud sync completed");
+    } catch (error) {
+      console.warn("Cloud sync failed (offline?):", error);
+    }
+  }, SYNC_DELAY);
+};
+
+// Initialize: Load from cloud if logged in
+export const initializeStorage = async (): Promise<boolean> => {
+  try {
+    const cloudData = await performFullSync();
+
+    if (cloudData.trackedApps.length > 0) {
+      // Merge cloud data with local (cloud wins for conflicts)
+      const localApps = getTrackedApps();
+      const mergedApps = mergeData(localApps, cloudData.trackedApps, "id");
+      localStorage.setItem(
+        STORAGE_KEYS.TRACKED_APPS,
+        JSON.stringify(mergedApps)
+      );
+    }
+
+    if (cloudData.keywords.length > 0) {
+      const localKeywords = getAllKeywords();
+      const mergedKeywords = mergeData(localKeywords, cloudData.keywords, "id");
+      localStorage.setItem(
+        STORAGE_KEYS.KEYWORDS,
+        JSON.stringify(mergedKeywords)
+      );
+    }
+
+    if (cloudData.analyses.length > 0) {
+      const localAnalyses = getAnalysisHistory();
+      const mergedAnalyses = mergeData(localAnalyses, cloudData.analyses, "id");
+      localStorage.setItem(
+        STORAGE_KEYS.ANALYSIS_HISTORY,
+        JSON.stringify(mergedAnalyses.slice(0, 50))
+      );
+    }
+
+    // Load settings
+    const settings = await fetchSettingsFromCloud();
+    if (settings?.selectedCountry) {
+      localStorage.setItem(
+        STORAGE_KEYS.SELECTED_COUNTRY,
+        settings.selectedCountry
+      );
+    }
+
+    console.log("☁️ Data loaded from cloud");
+    return true;
+  } catch (error) {
+    console.warn("Could not load from cloud:", error);
+    return false;
+  }
+};
+
+// Merge helper: combines local and cloud data, cloud wins on conflict
+function mergeData<T extends { id: string }>(
+  local: T[],
+  cloud: T[],
+  key: keyof T
+): T[] {
+  const map = new Map<string, T>();
+
+  // Add local first
+  for (const item of local) {
+    map.set(String(item[key]), item);
+  }
+
+  // Cloud overwrites
+  for (const item of cloud) {
+    map.set(String(item[key]), item);
+  }
+
+  return Array.from(map.values());
+}
 
 // Tracked Apps
 export const getTrackedApps = (): TrackedApp[] => {
@@ -47,7 +156,7 @@ export const getTrackedApps = (): TrackedApp[] => {
 
 export const addTrackedApp = (app: App): void => {
   const tracked = getTrackedApps();
-  if (tracked.some((t) => t.id === app.id)) return; // Already tracked
+  if (tracked.some((t) => t.id === app.id)) return;
 
   const newTracked: TrackedApp = {
     id: app.id,
@@ -65,11 +174,14 @@ export const addTrackedApp = (app: App): void => {
 
   tracked.push(newTracked);
   localStorage.setItem(STORAGE_KEYS.TRACKED_APPS, JSON.stringify(tracked));
+  debouncedCloudSync(); // Sync to cloud
 };
 
 export const removeTrackedApp = (appId: string): void => {
   const tracked = getTrackedApps().filter((t) => t.id !== appId);
   localStorage.setItem(STORAGE_KEYS.TRACKED_APPS, JSON.stringify(tracked));
+  deleteTrackedAppFromCloud(appId); // Delete from cloud
+  debouncedCloudSync();
 };
 
 export const updateTrackedApp = (appId: string, app: App): void => {
@@ -88,6 +200,7 @@ export const updateTrackedApp = (appId: string, app: App): void => {
   });
 
   localStorage.setItem(STORAGE_KEYS.TRACKED_APPS, JSON.stringify(tracked));
+  debouncedCloudSync(); // Sync to cloud
 };
 
 // Analysis History
@@ -117,15 +230,17 @@ export const saveAnalysis = (
     createdAt: new Date().toISOString(),
   };
 
-  history.unshift(saved); // Add to beginning
-  // Keep only last 50 analyses
+  history.unshift(saved);
   const limited = history.slice(0, 50);
   localStorage.setItem(STORAGE_KEYS.ANALYSIS_HISTORY, JSON.stringify(limited));
+  debouncedCloudSync(); // Sync to cloud
 };
 
 export const deleteAnalysis = (analysisId: string): void => {
   const history = getAnalysisHistory().filter((h) => h.id !== analysisId);
   localStorage.setItem(STORAGE_KEYS.ANALYSIS_HISTORY, JSON.stringify(history));
+  deleteAnalysisFromCloud(analysisId); // Delete from cloud
+  debouncedCloudSync();
 };
 
 // Country Selection
@@ -135,6 +250,7 @@ export const getSelectedCountry = (): string => {
 
 export const setSelectedCountry = (country: string): void => {
   localStorage.setItem(STORAGE_KEYS.SELECTED_COUNTRY, country);
+  syncSettingsToCloud({ selectedCountry: country }); // Sync to cloud
 };
 
 // Keywords Storage
@@ -183,7 +299,6 @@ export const getAllKeywords = (): StoredKeyword[] => {
 
 export const addKeyword = (keyword: StoredKeyword): void => {
   const keywords = getAllKeywords();
-  // Check if keyword already exists for this app
   if (
     keywords.some(
       (k) =>
@@ -191,15 +306,18 @@ export const addKeyword = (keyword: StoredKeyword): void => {
         k.keyword.toLowerCase() === keyword.keyword.toLowerCase()
     )
   ) {
-    return; // Already exists
+    return;
   }
   keywords.push(keyword);
   localStorage.setItem(STORAGE_KEYS.KEYWORDS, JSON.stringify(keywords));
+  debouncedCloudSync(); // Sync to cloud
 };
 
 export const removeKeyword = (keywordId: string): void => {
   const keywords = getAllKeywords().filter((k) => k.id !== keywordId);
   localStorage.setItem(STORAGE_KEYS.KEYWORDS, JSON.stringify(keywords));
+  deleteKeywordFromCloud(keywordId); // Delete from cloud
+  debouncedCloudSync();
 };
 
 export const updateKeyword = async (
@@ -222,7 +340,6 @@ export const updateKeyword = async (
       difficulty: updates.difficulty ?? keyword.difficulty ?? 0,
     };
 
-    // Keep last N days of history
     const { KEYWORD_CONFIG } = await import("./keywordConfig");
     const retentionDays = KEYWORD_CONFIG.HISTORY_RETENTION_DAYS;
     const cutoffDate = new Date();
@@ -237,4 +354,5 @@ export const updateKeyword = async (
 
   keywords[index] = { ...keyword, ...updates };
   localStorage.setItem(STORAGE_KEYS.KEYWORDS, JSON.stringify(keywords));
+  debouncedCloudSync(); // Sync to cloud
 };

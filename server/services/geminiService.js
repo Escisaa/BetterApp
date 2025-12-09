@@ -66,7 +66,9 @@ async function callAIWithFallback(geminiCall, openaiCall) {
 function getAI() {
   const gemini = getGeminiAI();
   if (gemini) return gemini;
-  throw new Error("GEMINI_API_KEY not configured. Set OPENAI_API_KEY as fallback.");
+  throw new Error(
+    "GEMINI_API_KEY not configured. Set OPENAI_API_KEY as fallback."
+  );
 }
 
 const analysisSchema = {
@@ -160,8 +162,12 @@ export async function analyzeReviewsWithAI(appName, reviews) {
     
 REVIEW STATS:
 - Total: ${totalReviews}, Avg rating: ${avgRating.toFixed(1)}/5
-- Positive (4-5★): ${positiveReviews} (${Math.round((positiveReviews / totalReviews) * 100)}%)
-- Negative (1-2★): ${negativeReviews} (${Math.round((negativeReviews / totalReviews) * 100)}%)
+- Positive (4-5★): ${positiveReviews} (${Math.round(
+    (positiveReviews / totalReviews) * 100
+  )}%)
+- Negative (1-2★): ${negativeReviews} (${Math.round(
+    (negativeReviews / totalReviews) * 100
+  )}%)
 
 REVIEWS:
 ${reviewsText}
@@ -241,15 +247,25 @@ Return ONLY a JSON array like: ["Tag1", "Tag2", "Tag3"]`;
 }
 
 export async function chatWithAI(appName, chatHistory, newMessage) {
-  const historyContext = chatHistory.length > 0
-    ? chatHistory.map((msg) => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.parts[0].text}`).join("\n")
-    : "";
+  const historyContext =
+    chatHistory.length > 0
+      ? chatHistory
+          .map(
+            (msg) =>
+              `${msg.role === "user" ? "User" : "Assistant"}: ${
+                msg.parts[0].text
+              }`
+          )
+          .join("\n")
+      : "";
 
   const prompt = `You are an AI assistant helping analyze the app "${appName}".
 Help with: features, competitors, ASO, marketing, monetization, user feedback.
 Be concise (2-4 sentences). Be helpful.
 
-${historyContext ? `Previous:\n${historyContext}\n\n` : ""}User: "${newMessage}"`;
+${
+  historyContext ? `Previous:\n${historyContext}\n\n` : ""
+}User: "${newMessage}"`;
 
   try {
     return await callAIWithFallback(
@@ -283,12 +299,20 @@ ${historyContext ? `Previous:\n${historyContext}\n\n` : ""}User: "${newMessage}"
 }
 
 // Competitive Intelligence with fallback
-export async function analyzeCompetitiveIntelligence(appName, reviews, appMetadata) {
-  const reviewsText = reviews.map((r) => `${r.rating}★: ${r.content}`).join("\n");
-  
+export async function analyzeCompetitiveIntelligence(
+  appName,
+  reviews,
+  appMetadata
+) {
+  const reviewsText = reviews
+    .map((r) => `${r.rating}★: ${r.content}`)
+    .join("\n");
+
   let context = `App: "${appName}"\nReviews:\n${reviewsText}`;
-  if (appMetadata?.description) context += `\nDescription: ${appMetadata.description.substring(0, 300)}`;
-  if (appMetadata?.formattedPrice) context += `\nPrice: ${appMetadata.formattedPrice}`;
+  if (appMetadata?.description)
+    context += `\nDescription: ${appMetadata.description.substring(0, 300)}`;
+  if (appMetadata?.formattedPrice)
+    context += `\nPrice: ${appMetadata.formattedPrice}`;
 
   const prompt = `Analyze "${appName}" and return JSON with competitive intelligence to help build a BETTER app.
 
