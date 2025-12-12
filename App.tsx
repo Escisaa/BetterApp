@@ -107,58 +107,17 @@ class ErrorBoundary extends Component<
   }
 }
 
-// Protected Route Component - Requires authentication
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
+// Optional Auth Route - Dashboard accessible without login, features gated by license
+const OptionalAuthRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setAuthenticated(!!session);
-      setLoading(false);
-    };
-
-    checkAuth();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthenticated(!!session);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#111213] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!authenticated) {
-    return <Navigate to="/auth" replace />;
-  }
-
   return <>{children}</>;
 };
 
 // Landing Page with navigation
 const LandingPageWrapper: React.FC = () => {
-  const navigate = useNavigate();
-
   const handleGetStarted = () => {
-    navigate("/auth");
+    // Unused - LandingPage navigates directly to /dashboard
   };
 
   return <LandingPage onGetStarted={handleGetStarted} />;
@@ -188,9 +147,9 @@ const App: React.FC = () => {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
+                <OptionalAuthRoute>
                   <Dashboard />
-                </ProtectedRoute>
+                </OptionalAuthRoute>
               }
             />
             <Route path="*" element={<Navigate to="/" replace />} />

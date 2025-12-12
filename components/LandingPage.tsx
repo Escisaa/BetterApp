@@ -65,7 +65,8 @@ const LandingPage: React.FC<LandingPageProps> = ({
 
   const handleGetStarted = () => {
     setIsNavigating(true);
-    onGetStarted(); // This now navigates to /auth
+    // Go directly to dashboard - features will be gated by license
+    navigate("/dashboard");
   };
 
   const fadeInUp = {
@@ -202,7 +203,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
-                ✨ Made for indie iOS developers
+              ✨ Made for indie iOS developers
             </motion.div>
             <motion.h1
               className={`text-5xl sm:text-6xl md:text-7xl font-extrabold ${
@@ -210,9 +211,9 @@ const LandingPage: React.FC<LandingPageProps> = ({
               } tracking-tighter leading-tight`}
               variants={fadeInUp}
             >
-                Understand your competition.
-                <br />
-                Build better apps.
+              Understand your competition.
+              <br />
+              Build better apps.
             </motion.h1>
             <motion.p
               className={`max-w-2xl mx-auto mt-6 text-lg ${
@@ -972,7 +973,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
                 </p>
               </motion.div>
             </div>
-        </div>
+          </div>
         </motion.section>
       </main>
 
@@ -1025,7 +1026,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
               </svg>
             </button>
           </div>
-    </div>
+        </div>
       )}
     </motion.div>
   );

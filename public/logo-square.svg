@@ -1,0 +1,20 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Perfect square for Instagram profile -->
+  <!-- Background with gradient -->
+  <rect width="1024" height="1024" rx="192" fill="url(#gradient)"/>
+  
+  <!-- Lens/scope overlay - centered -->
+  <circle cx="512" cy="512" r="256" stroke="white" stroke-width="64" fill="none" opacity="0.9"/>
+  <circle cx="512" cy="512" r="128" fill="white" opacity="0.7"/>
+  
+  <!-- Corner accent -->
+  <rect x="640" y="256" width="128" height="128" rx="32" fill="white" opacity="0.8"/>
+  
+  <defs>
+    <linearGradient id="gradient" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F97316"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+  </defs>
+</svg>
+
